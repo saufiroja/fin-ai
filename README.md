@@ -30,7 +30,7 @@
 - Clone repository ini
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/saufiroja/fin-ai.git
 cd fin-ai
 ```
 
@@ -46,4 +46,8 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-- Akses aplikasi di `http://localhost:8080`
+Note: Jika anda running dengan docker-compose up, maka anda bisa mengakses aplikasi di `http://localhost:8080` dan database migration akan otomatis berjalan.
+
+## DB Diagram
+
+![DB Diagram](./images/fin-ai.png)
