@@ -104,10 +104,127 @@ Database migration berjalan otomatis saat container aktif.
 
 Jika `mode` tidak diisi, maka default dianggap sebagai "consultation".
 
+Berikut adalah versi lengkap dari `README.md` yang siap untuk kamu salin dan gunakan:
+
+## 🔄 Fin AI - Application Flow
+
+Dokumentasi alur sistem Fin AI untuk pencatatan dan manajemen keuangan pribadi berbasis AI.
+
 ---
 
-## 🔧 Contributing
+### 1. 🧑‍💻 User Interaction
 
-Pull request sangat diterima! Untuk perubahan besar, mohon buka issue terlebih dahulu untuk didiskusikan.
+- **User Registration & Login**
+  - Endpoint:
+    - `POST /api/v1/auth/register`
+    - `POST /api/v1/auth/login`
+  - Output:
+    - JWT Token untuk autentikasi
+- **Dashboard Akses**
+  - User menggunakan token untuk mengakses seluruh fitur aplikasi
 
 ---
+
+### 2. 💸 Transaksi Keuangan
+
+#### a. Input Manual
+
+- Endpoint: `POST /api/v1/transactions`
+- Input: Form transaksi seperti kategori, deskripsi, nominal, sumber, tanggal
+- Proses:
+  - Validasi data
+  - Simpan ke tabel `transactions`
+
+##### b. Input via Chat Prompt / OCR
+
+- Endpoint: `POST /api/v1/ai/chat`
+- Payload:
+  ```json
+  {
+    "user_id": "uuid",
+    "mode": "chat" | "ocr",
+    "message": "Saya belanja di Alfamart Rp25.000",
+    "image_base64": "base64string (hanya jika mode: ocr)"
+  }
+  ```
+
+* Proses:
+
+  - Jika `mode = ocr`: lakukan ekstraksi struk dengan OCR
+  - Jika `mode = chat`: gunakan model GPT untuk memahami input natural
+  - Transaksi yang dikenali disimpan ke tabel `transactions`
+  - Riwayat interaksi disimpan ke tabel `log_messages`
+
+---
+
+### 3. 📊 Budget & Laporan
+
+#### a. Budgeting (belum ada API docs nya)
+
+- Endpoint: `POST /api/v1/budgets`
+- Input: Kategori, batas anggaran, bulan/tahun
+- Proses:
+
+  - Disimpan ke tabel `budgets`
+  - Digunakan untuk perbandingan dengan realisasi transaksi
+
+#### b. Laporan Bulanan & Tahunan
+
+- Endpoint: `GET /api/v1/reports`
+- Proses:
+
+  - Query semua transaksi berdasarkan rentang waktu
+  - Gabungkan dengan informasi budget
+  - Buat laporan dalam bentuk summary atau visualisasi
+
+---
+
+### 4. 🤖 AI Features
+
+#### a. Prediksi Pengeluaran
+
+- Endpoint: `POST /api/v1/ai/chat`
+- Input: `user_id`
+- Proses:
+
+  - Query histori transaksi
+  - Gunakan model prediksi untuk estimasi pengeluaran bulan depan
+
+#### b. Smart Summary
+
+- Endpoint: `POST /api/v1/ai/chat`
+- Proses:
+
+  - Ambil transaksi bulan berjalan
+  - Kirim ke LLM untuk dibuatkan ringkasan keuangan otomatis
+  - Gunakan model untuk analisis dan rekomendasi pengeluaran
+
+---
+
+### 5. 📦 Penyimpanan & Struktur Data
+
+#### Database Tables
+
+- `users`: Data pengguna
+- `transactions`: Catatan transaksi pengguna
+- `categories`: Kategori transaksi (income / expense)
+- `budgets`: Batas anggaran per kategori
+- `receipts`: Data struk belanja (OCR)
+- `log_messages`: Riwayat interaksi dengan AI
+- `insights`: Analisis atau insight dari AI (berbasis JSON)
+
+---
+
+### 6. 🐳 Deployment Flow
+
+1. Konfigurasi `.env`
+2. Jalankan `docker-compose up --build`
+3. Database dan migration berjalan otomatis
+4. Akses aplikasi di `http://localhost:8080`
+
+---
+
+### 📌 Catatan
+
+- Semua endpoint memerlukan token JWT (kecuali register/login)
+- AI endpoint akan berkembang berdasarkan kebutuhan dan feedback pengguna
