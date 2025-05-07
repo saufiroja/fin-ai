@@ -1,0 +1,35 @@
+version: '3.7'
+services:
+  fin-ai:
+    image: fin-ai:0.0.1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres
+    networks:
+      - fin-ai
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d/
+    networks:
+      - fin-ai
+
+networks:
+  fin-ai:
+    driver: bridge
+
+volumes:
+  postgres-data:
