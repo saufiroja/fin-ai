@@ -8,6 +8,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/sirupsen/logrus v1.9.3
+	golang.org/x/crypto v0.32.0
 	golang.org/x/text v0.21.0
 )
 
@@ -18,6 +19,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/oklog/ulid/v2 v2.1.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
