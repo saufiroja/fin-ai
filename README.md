@@ -228,3 +228,7 @@ Dokumentasi alur sistem Fin AI untuk pencatatan dan manajemen keuangan pribadi b
 
 - Semua endpoint memerlukan token JWT (kecuali register/login)
 - AI endpoint akan berkembang berdasarkan kebutuhan dan feedback pengguna
+
+## Database
+
+![Database](./images/fin-ai.png)
