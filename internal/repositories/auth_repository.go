@@ -6,17 +6,17 @@ import (
 	"github.com/saufiroja/fin-ai/pkg/databases"
 )
 
-type authRepository struct {
+type userRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewAuthRepository(db databases.PostgresManager) interfaces.AuthRepositoryInterface {
-	return &authRepository{
+func NewUserRepository(db databases.PostgresManager) interfaces.UserRepositoryInterface {
+	return &userRepository{
 		DB: db,
 	}
 }
 
-func (r *authRepository) InsertUser(req *models.User) error {
+func (r *userRepository) InsertUser(req *models.User) error {
 	db := r.DB.Connection()
 	query := `INSERT INTO users (user_id, full_name, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`
 	_, err := db.Exec(query, req.UserId, req.FullName, req.Email, req.Password, req.CreatedAt, req.UpdatedAt)
@@ -27,7 +27,7 @@ func (r *authRepository) InsertUser(req *models.User) error {
 	return nil
 }
 
-func (r *authRepository) FindUserByEmail(email string) (*models.User, error) {
+func (r *userRepository) FindUserByEmail(email string) (*models.User, error) {
 	db := r.DB.Connection()
 	query := `SELECT user_id, full_name, email, password FROM users WHERE email = $1`
 	row := db.QueryRow(query, email)
@@ -41,7 +41,7 @@ func (r *authRepository) FindUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *authRepository) FindUserById(userId string) (*models.FindUserById, error) {
+func (r *userRepository) FindUserById(userId string) (*models.FindUserById, error) {
 	db := r.DB.Connection()
 	query := `SELECT user_id, full_name, email FROM users WHERE user_id = $1`
 	row := db.QueryRow(query, userId)

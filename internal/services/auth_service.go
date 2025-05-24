@@ -16,14 +16,14 @@ import (
 )
 
 type authService struct {
-	repoUser       interfaces.AuthRepositoryInterface
+	repoUser       interfaces.UserRepositoryInterface
 	logging        logging.Logger
 	tokenGenerator utils.TokenGenerator
 	conf           *config.AppConfig
 }
 
 func NewAuthService(
-	repo interfaces.AuthRepositoryInterface,
+	repo interfaces.UserRepositoryInterface,
 	logging logging.Logger,
 	tokenGenerator utils.TokenGenerator,
 	conf *config.AppConfig,

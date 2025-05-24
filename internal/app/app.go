@@ -46,7 +46,7 @@ func (a *App) Start() {
 
 	validator := utils.NewValidator()
 	tokenGenerator := utils.NewJWTTokenGenerator(conf)
-	userRepository := repositories.NewAuthRepository(postgresInstance)
+	userRepository := repositories.NewUserRepository(postgresInstance)
 	userService := services.NewAuthService(userRepository, logger, tokenGenerator, conf)
 	userController := authController.NewAuthController(userService, validator)
 

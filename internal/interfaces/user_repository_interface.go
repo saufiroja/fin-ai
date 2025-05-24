@@ -2,7 +2,7 @@ package interfaces
 
 import "github.com/saufiroja/fin-ai/internal/models"
 
-type AuthRepositoryInterface interface {
+type UserRepositoryInterface interface {
 	InsertUser(req *models.User) error
 	FindUserByEmail(email string) (*models.User, error)
 	FindUserById(userId string) (*models.FindUserById, error)
