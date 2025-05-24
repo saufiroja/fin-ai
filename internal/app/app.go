@@ -8,6 +8,7 @@ import (
 	authController "github.com/saufiroja/fin-ai/internal/controllers/auth"
 	"github.com/saufiroja/fin-ai/internal/repositories"
 	"github.com/saufiroja/fin-ai/internal/services"
+	"github.com/saufiroja/fin-ai/internal/utils"
 	"github.com/saufiroja/fin-ai/pkg/databases"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 )
@@ -33,13 +34,25 @@ func (a *App) Start() {
 		}
 	}()
 
+	// health check
+	a.Get("/health", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"status":  fiber.StatusOK,
+			"message": "ok",
+		})
+	})
+
+	validator := utils.NewValidator()
+	tokenGenerator := utils.NewJWTTokenGenerator(conf)
 	userRepository := repositories.NewAuthRepository(postgresInstance)
-	userService := services.NewAuthService(userRepository, logger)
-	userController := authController.NewAuthController(userService)
+	userService := services.NewAuthService(userRepository, logger, tokenGenerator)
+	userController := authController.NewAuthController(userService, validator)
 
-	a.Post("/register", userController.RegisterUser)
+	api := a.Group("/api/v1")
+	api.Post("/register", userController.RegisterUser)
+	api.Post("/login", userController.LoginUser)
 
-	if err := a.Listen(fmt.Sprintf(":%s", conf.Http.Port)); err != nil {
+	if err := a.Listen(fmt.Sprintf("localhost:%s", conf.Http.Port)); err != nil {
 		logger.LogPanic(err.Error())
 	}
 }

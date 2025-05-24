@@ -26,3 +26,17 @@ func (r *authRepository) InsertUser(req *models.User) error {
 
 	return nil
 }
+
+func (r *authRepository) FindUserByEmail(email string) (*models.User, error) {
+	db := r.DB.Connection()
+	query := `SELECT user_id, full_name, email, password FROM users WHERE email = $1`
+	row := db.QueryRow(query, email)
+
+	var user models.User
+	err := row.Scan(&user.UserId, &user.FullName, &user.Email, &user.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
