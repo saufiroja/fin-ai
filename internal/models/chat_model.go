@@ -33,3 +33,18 @@ type ChatSessionUpdateRequest struct {
 	UserId        string `json:"user_id" validate:"required"`
 	Title         string `json:"title" validate:"required"`
 }
+
+type ChatMessageRequest struct {
+	ChatSessionId string `json:"chat_session_id" validate:"required"`
+	UserId        string `json:"user_id" validate:"required"`
+	Message       string `json:"message" validate:"required"`
+}
+
+type ChatSessionDetail struct {
+	ChatMessageId string            `json:"chat_message_id"`
+	ChatSessionId string            `json:"chat_session_id"`
+	Message       string            `json:"message"`
+	Sender        ChatMessageSender `json:"sender"`
+	CreatedAt     *time.Time        `json:"created_at"`
+	UpdatedAt     *time.Time        `json:"updated_at"`
+}

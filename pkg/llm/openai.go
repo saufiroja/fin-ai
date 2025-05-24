@@ -9,6 +9,10 @@ import (
 	"github.com/saufiroja/fin-ai/config"
 )
 
+type OpenAI interface {
+	SendChat(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion) (string, error)
+}
+
 type OpenAIClient struct {
 	client openai.Client
 	model  string
@@ -19,7 +23,7 @@ var (
 	once     sync.Once
 )
 
-func NewOpenAI(conf *config.AppConfig) *OpenAIClient {
+func NewOpenAI(conf *config.AppConfig) OpenAI {
 	once.Do(func() {
 		instance = &OpenAIClient{
 			client: openai.NewClient(
@@ -31,7 +35,7 @@ func NewOpenAI(conf *config.AppConfig) *OpenAIClient {
 	return instance
 }
 
-func (o *OpenAIClient) Chat(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion) (string, error) {
+func (o *OpenAIClient) SendChat(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion) (string, error) {
 	resp, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Model:    o.model,
 		Messages: messages,

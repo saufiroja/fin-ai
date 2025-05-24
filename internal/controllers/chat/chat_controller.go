@@ -1,6 +1,8 @@
 package chat
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/saufiroja/fin-ai/internal/interfaces"
 	"github.com/saufiroja/fin-ai/internal/models"
@@ -94,5 +96,57 @@ func (c *chatController) DeleteChatSession(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(models.Response{
 		Status:  fiber.StatusOK,
 		Message: "Chat session deleted successfully",
+	})
+}
+
+func (c *chatController) SendChatMessage(ctx *fiber.Ctx) error {
+	message := new(models.ChatMessageRequest)
+
+	if err := ctx.BodyParser(message); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(models.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid request body",
+		})
+	}
+	fmt.Println("Received message:", message)
+
+	if err := c.validator.ValidateStruct(message); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(models.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Validation error: " + err.Error(),
+		})
+	}
+
+	response, err := c.chatService.SendChatMessage(ctx.Context(), message)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to send chat message",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(models.Response{
+		Status:  fiber.StatusOK,
+		Message: "Chat message sent successfully",
+		Data:    response,
+	})
+}
+
+func (c *chatController) GetChatSessionDetail(ctx *fiber.Ctx) error {
+	chatSessionId := ctx.Params("chat_session_id")
+	userId := ctx.Params("user_id")
+
+	messages, err := c.chatService.FindChatSessionDetailByChatSessionIdAndUserId(chatSessionId, userId)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to retrieve chat session details",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(models.Response{
+		Status:  fiber.StatusOK,
+		Message: "Chat session details retrieved successfully",
+		Data:    messages,
 	})
 }

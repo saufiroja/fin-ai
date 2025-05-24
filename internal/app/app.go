@@ -13,6 +13,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/services"
 	"github.com/saufiroja/fin-ai/internal/utils"
 	"github.com/saufiroja/fin-ai/pkg/databases"
+	"github.com/saufiroja/fin-ai/pkg/llm"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 )
 
@@ -31,7 +32,7 @@ func (a *App) Start() {
 	conf := config.NewAppConfig(logger)
 	postgresInstance := databases.NewPostgres(conf, logger)
 	authMiddleware := middleware.Authorization(conf)
-	// llm.NewOpenAI(conf)
+	llmClient := llm.NewOpenAI(conf)
 	defer func() {
 		if err := postgresInstance.CloseConnection(); err != nil {
 			logger.LogError(fmt.Sprintf("failed to close postgres connection: %v", err))
@@ -54,7 +55,7 @@ func (a *App) Start() {
 
 	authService := services.NewAuthService(userRepository, logger, tokenGenerator, conf)
 	userService := services.NewUserService(userRepository, logger)
-	chatService := services.NewChatService(chatRepository, logger)
+	chatService := services.NewChatService(chatRepository, logger, llmClient)
 
 	authController := authController.NewAuthController(authService, validator)
 	userController := user.NewUserController(userService)
@@ -76,6 +77,8 @@ func (a *App) Start() {
 	chat.Get("/session/:user_id", authMiddleware, chatController.FindAllChatSessions)
 	chat.Put("/session-rename", authMiddleware, chatController.RenameChatSession)
 	chat.Delete("/session/:chat_session_id/:user_id", authMiddleware, chatController.DeleteChatSession)
+	chat.Post("/send", authMiddleware, chatController.SendChatMessage)
+	chat.Get("/session-detail/:chat_session_id/:user_id", authMiddleware, chatController.GetChatSessionDetail)
 
 	if err := a.Listen(fmt.Sprintf("localhost:%s", conf.Http.Port)); err != nil {
 		logger.LogPanic(err.Error())
