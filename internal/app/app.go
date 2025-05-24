@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/saufiroja/fin-ai/config"
 	authController "github.com/saufiroja/fin-ai/internal/controllers/auth"
+	chat "github.com/saufiroja/fin-ai/internal/controllers/chat"
 	user "github.com/saufiroja/fin-ai/internal/controllers/user"
 	"github.com/saufiroja/fin-ai/internal/middleware"
 	"github.com/saufiroja/fin-ai/internal/repositories"
@@ -49,12 +50,15 @@ func (a *App) Start() {
 	validator := utils.NewValidator()
 	tokenGenerator := utils.NewJWTTokenGenerator(conf)
 	userRepository := repositories.NewUserRepository(postgresInstance)
+	chatRepository := repositories.NewChatRepository(postgresInstance)
 
 	authService := services.NewAuthService(userRepository, logger, tokenGenerator, conf)
 	userService := services.NewUserService(userRepository, logger)
+	chatService := services.NewChatService(chatRepository, logger)
 
 	authController := authController.NewAuthController(authService, validator)
 	userController := user.NewUserController(userService)
+	chatController := chat.NewChatController(chatService)
 
 	auth := globalApi.Group("/auth")
 	auth.Post("/register", authController.RegisterUser)
@@ -66,6 +70,10 @@ func (a *App) Start() {
 	user.Get("/me", authMiddleware, userController.GetMe)
 	user.Put("/:user_id", authMiddleware, userController.UpdateUserById)
 	user.Delete("/:user_id", authMiddleware, userController.DeleteUserById)
+
+	chat := globalApi.Group("/chat")
+	chat.Post("/session/:user_id", authMiddleware, chatController.CreateChatSession)
+	chat.Get("/session/:user_id", authMiddleware, chatController.FindAllChatSessions)
 
 	if err := a.Listen(fmt.Sprintf("localhost:%s", conf.Http.Port)); err != nil {
 		logger.LogPanic(err.Error())
