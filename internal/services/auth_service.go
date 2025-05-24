@@ -133,19 +133,6 @@ func (s *authService) ValidateRefreshToken(token string) (*models.JwtGenerator, 
 	return newAccessToken, nil
 }
 
-func (s *authService) GetMe(userId string) (*models.FindUserById, error) {
-	s.logging.LogInfo("Getting user information")
-
-	user, err := s.repoUser.FindUserById(userId)
-	if err != nil {
-		s.logging.LogError("Failed to get user info: " + err.Error())
-		return nil, errors.New("failed to get user information")
-	}
-
-	s.logging.LogInfo("User information retrieved successfully")
-	return user, nil
-}
-
 func (s *authService) setAuthCookies(ctx *fiber.Ctx, res *models.LoginResponse) {
 	domain := "localhost" // or use s.conf.AppDomain if configurable
 

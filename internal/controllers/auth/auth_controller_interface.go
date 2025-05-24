@@ -7,5 +7,4 @@ type AuthController interface {
 	LoginUser(c *fiber.Ctx) error
 	LogoutUser(c *fiber.Ctx) error
 	RefreshToken(c *fiber.Ctx) error
-	GetMe(c *fiber.Ctx) error
 }

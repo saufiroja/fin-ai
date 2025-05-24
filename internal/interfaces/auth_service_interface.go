@@ -10,5 +10,4 @@ type AuthServiceInterface interface {
 	LoginUser(req *models.LoginUser, ctx *fiber.Ctx) (*models.LoginResponse, error)
 	LogoutUser(ctx *fiber.Ctx) error
 	ValidateRefreshToken(token string) (*models.JwtGenerator, error)
-	GetMe(userId string) (*models.FindUserById, error)
 }

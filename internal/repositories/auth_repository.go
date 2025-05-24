@@ -54,3 +54,29 @@ func (r *userRepository) FindUserById(userId string) (*models.FindUserById, erro
 
 	return &user, nil
 }
+
+func (r *userRepository) UpdateUserById(userId string, req *models.UpdateUserRequest) error {
+	db := r.DB.Connection()
+	query := `UPDATE users SET 
+			full_name = $1,
+			email = $2, 
+			updated_at = NOW() 
+			WHERE user_id = $3`
+	_, err := db.Exec(query, req.FullName, req.Email, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *userRepository) DeleteUserById(userId string) error {
+	db := r.DB.Connection()
+	query := `DELETE FROM users WHERE user_id = $1`
+	_, err := db.Exec(query, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -123,29 +123,3 @@ func (c *authController) RefreshToken(ctx *fiber.Ctx) error {
 		Data:    jwtToken,
 	})
 }
-
-func (c *authController) GetMe(ctx *fiber.Ctx) error {
-	userId := ctx.Locals("user_id").(string)
-
-	if userId == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(models.Response{
-			Status:  fiber.StatusBadRequest,
-			Message: "User ID not found in token",
-		})
-	}
-
-	// Ambil user info dari service
-	user, err := c.authService.GetMe(userId)
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{
-			Status:  fiber.StatusInternalServerError,
-			Message: "Failed to get user information",
-		})
-	}
-
-	return ctx.Status(fiber.StatusOK).JSON(models.Response{
-		Status:  fiber.StatusOK,
-		Message: "User information retrieved successfully",
-		Data:    user,
-	})
-}
