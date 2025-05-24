@@ -58,7 +58,7 @@ func (a *App) Start() {
 
 	authController := authController.NewAuthController(authService, validator)
 	userController := user.NewUserController(userService)
-	chatController := chat.NewChatController(chatService)
+	chatController := chat.NewChatController(chatService, validator)
 
 	auth := globalApi.Group("/auth")
 	auth.Post("/register", authController.RegisterUser)
@@ -74,6 +74,8 @@ func (a *App) Start() {
 	chat := globalApi.Group("/chat")
 	chat.Post("/session/:user_id", authMiddleware, chatController.CreateChatSession)
 	chat.Get("/session/:user_id", authMiddleware, chatController.FindAllChatSessions)
+	chat.Put("/session-rename", authMiddleware, chatController.RenameChatSession)
+	chat.Delete("/session/:chat_session_id/:user_id", authMiddleware, chatController.DeleteChatSession)
 
 	if err := a.Listen(fmt.Sprintf("localhost:%s", conf.Http.Port)); err != nil {
 		logger.LogPanic(err.Error())

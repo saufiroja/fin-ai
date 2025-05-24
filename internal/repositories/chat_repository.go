@@ -30,7 +30,7 @@ func (r *chatRepository) InsertChatSession(chatSession *models.ChatSession) erro
 
 func (r *chatRepository) FindAllChatSessions(userId string) ([]*models.ChatSession, error) {
 	db := r.DB.Connection()
-	query := `SELECT chat_session_id, user_id, title FROM chat_sessions WHERE user_id = $1 ORDER BY updated_at DESC`
+	query := `SELECT chat_session_id, user_id, title FROM chat_sessions WHERE user_id = $1 AND deleted_at IS NULL ORDER BY updated_at DESC`
 	rows, err := db.Query(query, userId)
 	if err != nil {
 		return nil, err
@@ -48,4 +48,39 @@ func (r *chatRepository) FindAllChatSessions(userId string) ([]*models.ChatSessi
 	}
 
 	return chatSessions, nil
+}
+
+func (r *chatRepository) RenameChatSession(chatSession *models.ChatSession) error {
+	db := r.DB.Connection()
+	query := `UPDATE chat_sessions SET title = $1, updated_at = $2 WHERE chat_session_id = $3 AND user_id = $4`
+	_, err := db.Exec(query, chatSession.Title, chatSession.UpdatedAt, chatSession.ChatSessionId, chatSession.UserId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *chatRepository) DeleteChatSession(chatSessionId, userId string) error {
+	db := r.DB.Connection()
+	query := `UPDATE chat_sessions SET deleted_at = NOW() WHERE chat_session_id = $1 AND user_id = $2`
+	_, err := db.Exec(query, chatSessionId, userId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *chatRepository) FindChatSessionByChatSessionIdAndUserId(chatSessionId, userId string) (*models.ChatSession, error) {
+	db := r.DB.Connection()
+	query := `SELECT chat_session_id, user_id, title FROM chat_sessions WHERE chat_session_id = $1 AND user_id = $2`
+	row := db.QueryRow(query, chatSessionId, userId)
+
+	var chatSession models.ChatSession
+	err := row.Scan(&chatSession.ChatSessionId, &chatSession.UserId, &chatSession.Title)
+	if err != nil {
+		return nil, err
+	}
+
+	return &chatSession, nil
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -55,4 +56,49 @@ func (s *chatService) FindAllChatSessions(userId string) ([]*models.ChatSession,
 
 	s.logging.LogInfo(fmt.Sprintf("Found %d chat sessions", len(chatSessions)))
 	return chatSessions, nil
+}
+
+func (s *chatService) RenameChatSession(req *models.ChatSessionUpdateRequest) error {
+	s.logging.LogInfo(fmt.Sprintf("Renaming chat session: %s", req.ChatSessionId))
+
+	_, err := s.chatRepository.FindChatSessionByChatSessionIdAndUserId(req.ChatSessionId, req.UserId)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Chat session not found: %s", err.Error()))
+		return errors.New("chat session not found")
+	}
+
+	chatSession := &models.ChatSession{
+		ChatSessionId: req.ChatSessionId,
+		UserId:        req.UserId,
+		Title:         req.Title,
+		UpdatedAt:     time.Now(),
+	}
+
+	err = s.chatRepository.RenameChatSession(chatSession)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to rename chat session: %s", err.Error()))
+		return errors.New("failed to rename chat session")
+	}
+
+	s.logging.LogInfo("Chat session renamed successfully")
+	return nil
+}
+
+func (s *chatService) DeleteChatSession(chatSessionId, userId string) error {
+	s.logging.LogInfo(fmt.Sprintf("Deleting chat session: %s", chatSessionId))
+
+	_, err := s.chatRepository.FindChatSessionByChatSessionIdAndUserId(chatSessionId, userId)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Chat session not found: %s", err.Error()))
+		return errors.New("chat session not found")
+	}
+
+	err = s.chatRepository.DeleteChatSession(chatSessionId, userId)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to delete chat session: %s", err.Error()))
+		return errors.New("failed to delete chat session")
+	}
+
+	s.logging.LogInfo("Chat session deleted successfully")
+	return nil
 }

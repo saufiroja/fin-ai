@@ -27,3 +27,9 @@ const (
 	ChatMessageSenderUser      ChatMessageSender = "user"
 	ChatMessageSenderAssistant ChatMessageSender = "ai"
 )
+
+type ChatSessionUpdateRequest struct {
+	ChatSessionId string `json:"chat_session_id" validate:"required"`
+	UserId        string `json:"user_id" validate:"required"`
+	Title         string `json:"title" validate:"required"`
+}
