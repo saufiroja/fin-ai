@@ -67,7 +67,7 @@ func (c *authController) LoginUser(ctx *fiber.Ctx) error {
 		})
 	}
 
-	loginResponse, err := c.authService.LoginUser(&req)
+	loginResponse, err := c.authService.LoginUser(&req, ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{
 			Status:  fiber.StatusInternalServerError,
@@ -77,7 +77,75 @@ func (c *authController) LoginUser(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(models.Response{
 		Status:  fiber.StatusOK,
-		Message: "user logged in successfully",
+		Message: "User logged in successfully",
 		Data:    loginResponse,
+	})
+}
+
+func (c *authController) LogoutUser(ctx *fiber.Ctx) error {
+	// Implement logout logic here
+	err := c.authService.LogoutUser(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to logout user",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(models.Response{
+		Status:  fiber.StatusOK,
+		Message: "User logged out successfully",
+	})
+}
+
+func (c *authController) RefreshToken(ctx *fiber.Ctx) error {
+	// get refresh token from cookies
+	refreshToken := ctx.Cookies("refresh_token")
+	if refreshToken == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(models.Response{
+			Status:  fiber.StatusUnauthorized,
+			Message: "Refresh token not found",
+		})
+	}
+
+	// validate refresh token
+	jwtToken, err := c.authService.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(models.Response{
+			Status:  fiber.StatusUnauthorized,
+			Message: "Invalid refresh token",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(models.Response{
+		Status:  fiber.StatusOK,
+		Message: "Access token refreshed successfully",
+		Data:    jwtToken,
+	})
+}
+
+func (c *authController) GetMe(ctx *fiber.Ctx) error {
+	userId := ctx.Locals("user_id").(string)
+
+	if userId == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(models.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "User ID not found in token",
+		})
+	}
+
+	// Ambil user info dari service
+	user, err := c.authService.GetMe(userId)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to get user information",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(models.Response{
+		Status:  fiber.StatusOK,
+		Message: "User information retrieved successfully",
+		Data:    user,
 	})
 }

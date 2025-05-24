@@ -40,3 +40,17 @@ func (r *authRepository) FindUserByEmail(email string) (*models.User, error) {
 
 	return &user, nil
 }
+
+func (r *authRepository) FindUserById(userId string) (*models.FindUserById, error) {
+	db := r.DB.Connection()
+	query := `SELECT user_id, full_name, email FROM users WHERE user_id = $1`
+	row := db.QueryRow(query, userId)
+
+	var user models.FindUserById
+	err := row.Scan(&user.UserId, &user.FullName, &user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}

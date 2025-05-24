@@ -5,4 +5,5 @@ import "github.com/saufiroja/fin-ai/internal/models"
 type AuthRepositoryInterface interface {
 	InsertUser(req *models.User) error
 	FindUserByEmail(email string) (*models.User, error)
+	FindUserById(userId string) (*models.FindUserById, error)
 }

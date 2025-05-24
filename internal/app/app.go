@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/saufiroja/fin-ai/config"
 	authController "github.com/saufiroja/fin-ai/internal/controllers/auth"
+	"github.com/saufiroja/fin-ai/internal/middleware"
 	"github.com/saufiroja/fin-ai/internal/repositories"
 	"github.com/saufiroja/fin-ai/internal/services"
 	"github.com/saufiroja/fin-ai/internal/utils"
@@ -27,6 +28,7 @@ func (a *App) Start() {
 	logger := logging.NewLogrusAdapter()
 	conf := config.NewAppConfig(logger)
 	postgresInstance := databases.NewPostgres(conf, logger)
+	authMiddleware := middleware.Authorization(conf)
 	// llm.NewOpenAI(conf)
 	defer func() {
 		if err := postgresInstance.CloseConnection(); err != nil {
@@ -45,12 +47,15 @@ func (a *App) Start() {
 	validator := utils.NewValidator()
 	tokenGenerator := utils.NewJWTTokenGenerator(conf)
 	userRepository := repositories.NewAuthRepository(postgresInstance)
-	userService := services.NewAuthService(userRepository, logger, tokenGenerator)
+	userService := services.NewAuthService(userRepository, logger, tokenGenerator, conf)
 	userController := authController.NewAuthController(userService, validator)
 
-	api := a.Group("/api/v1")
-	api.Post("/register", userController.RegisterUser)
-	api.Post("/login", userController.LoginUser)
+	auth := a.Group("/api/v1")
+	auth.Post("/register", userController.RegisterUser)
+	auth.Post("/login", userController.LoginUser)
+	auth.Post("/logout", userController.LogoutUser)
+	auth.Post("/refresh-token", userController.RefreshToken)
+	auth.Get("/me", authMiddleware, userController.GetMe)
 
 	if err := a.Listen(fmt.Sprintf("localhost:%s", conf.Http.Port)); err != nil {
 		logger.LogPanic(err.Error())

@@ -6,12 +6,13 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/saufiroja/fin-ai/config"
+	"github.com/saufiroja/fin-ai/internal/models"
 )
 
 // TokenGenerator defines methods to generate and validate JWT tokens
 type TokenGenerator interface {
-	GenerateAccessToken(userId, fullName, email string) (string, error)
-	GenerateRefreshToken(userId, fullName, email string) (string, error)
+	GenerateAccessToken(userId, fullName, email string) (*models.JwtGenerator, error)
+	GenerateRefreshToken(userId, fullName, email string) (*models.JwtGenerator, error)
 	ValidateToken(tokenString string) (*jwt.Token, error)
 }
 
@@ -28,7 +29,7 @@ func NewJWTTokenGenerator(conf *config.AppConfig) TokenGenerator {
 }
 
 // GenerateAccessToken generates a JWT access token with custom claims
-func (g *JWTTokenGenerator) GenerateAccessToken(userId, fullName, email string) (string, error) {
+func (g *JWTTokenGenerator) GenerateAccessToken(userId, fullName, email string) (*models.JwtGenerator, error) {
 	now := time.Now()
 	expiresAt := now.Add(24 * time.Hour)
 
@@ -46,14 +47,17 @@ func (g *JWTTokenGenerator) GenerateAccessToken(userId, fullName, email string) 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(g.conf.Jwt.Secret))
 	if err != nil {
-		return "", fmt.Errorf("failed to generate JWT access token: %w", err)
+		return nil, fmt.Errorf("failed to generate JWT access token: %w", err)
 	}
 
-	return tokenString, nil
+	return &models.JwtGenerator{
+		Token:     tokenString,
+		ExpiredAt: expiresAt,
+	}, nil
 }
 
 // GenerateRefreshToken generates a JWT refresh token
-func (g *JWTTokenGenerator) GenerateRefreshToken(userId, fullName, email string) (string, error) {
+func (g *JWTTokenGenerator) GenerateRefreshToken(userId, fullName, email string) (*models.JwtGenerator, error) {
 	now := time.Now()
 	expiresAt := now.Add(30 * 24 * time.Hour) // 30 days
 
@@ -70,10 +74,13 @@ func (g *JWTTokenGenerator) GenerateRefreshToken(userId, fullName, email string)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(g.conf.Jwt.Secret))
 	if err != nil {
-		return "", fmt.Errorf("failed to generate JWT refresh token: %w", err)
+		return nil, fmt.Errorf("failed to generate JWT refresh token: %w", err)
 	}
 
-	return tokenString, nil
+	return &models.JwtGenerator{
+		Token:     tokenString,
+		ExpiredAt: expiresAt,
+	}, nil
 }
 
 // ValidateToken validates a JWT token
