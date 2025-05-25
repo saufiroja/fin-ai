@@ -52,10 +52,19 @@ func (a *App) Start() {
 	tokenGenerator := utils.NewJWTTokenGenerator(conf)
 	userRepository := repositories.NewUserRepository(postgresInstance)
 	chatRepository := repositories.NewChatRepository(postgresInstance)
+	modelRegistryRepository := repositories.NewModelRegistryRepository(postgresInstance)
+	logMessageRepository := repositories.NewLogMessageRepository(postgresInstance)
 
 	authService := services.NewAuthService(userRepository, logger, tokenGenerator, conf)
 	userService := services.NewUserService(userRepository, logger)
-	chatService := services.NewChatService(chatRepository, logger, llmClient)
+	logMessageService := services.NewLogMessageService(logMessageRepository, logger)
+	chatService := services.NewChatService(
+		chatRepository,
+		logger,
+		llmClient,
+		modelRegistryRepository,
+		logMessageService,
+	)
 
 	authController := authController.NewAuthController(authService, validator)
 	userController := user.NewUserController(userService)

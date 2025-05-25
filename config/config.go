@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/joho/godotenv"
-	"github.com/openai/openai-go"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -31,7 +30,6 @@ type AppConfig struct {
 	}
 	OpenAI struct {
 		ApiKey string
-		Model  string
 	}
 }
 
@@ -107,10 +105,5 @@ func (c *AppConfig) initOpenAI(logging logging.Logger) {
 	c.OpenAI.ApiKey = os.Getenv("OPENAI_API_KEY")
 	if c.OpenAI.ApiKey == "" {
 		logging.LogPanic("OpenAI API key not found")
-	}
-
-	c.OpenAI.Model = os.Getenv("OPENAI_MODEL")
-	if c.OpenAI.Model == "" {
-		c.OpenAI.Model = openai.ChatModelGPT4oMini
 	}
 }

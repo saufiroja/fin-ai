@@ -23,7 +23,7 @@ func NewChatController(chatService interfaces.ChatServiceInterface, validator ut
 
 func (c *chatController) CreateChatSession(ctx *fiber.Ctx) error {
 	userId := ctx.Params("user_id")
-	err := c.chatService.CreateChatSession(userId)
+	chatSession, err := c.chatService.CreateChatSession(userId)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{
 			Status:  fiber.StatusInternalServerError,
@@ -33,6 +33,7 @@ func (c *chatController) CreateChatSession(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(models.Response{
 		Status:  fiber.StatusCreated,
 		Message: "Chat session created successfully",
+		Data:    chatSession,
 	})
 }
 

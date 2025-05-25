@@ -7,10 +7,11 @@ import (
 	openai "github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/saufiroja/fin-ai/config"
+	"github.com/saufiroja/fin-ai/internal/models"
 )
 
 type OpenAI interface {
-	SendChat(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion) (string, error)
+	SendChat(ctx context.Context, modelName string, messages []openai.ChatCompletionMessageParamUnion) (*models.ResponseAI, error)
 }
 
 type OpenAIClient struct {
@@ -29,24 +30,29 @@ func NewOpenAI(conf *config.AppConfig) OpenAI {
 			client: openai.NewClient(
 				option.WithAPIKey(conf.OpenAI.ApiKey),
 			),
-			model: conf.OpenAI.Model,
 		}
 	})
 	return instance
 }
 
-func (o *OpenAIClient) SendChat(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion) (string, error) {
+func (o *OpenAIClient) SendChat(ctx context.Context, modelName string, messages []openai.ChatCompletionMessageParamUnion) (*models.ResponseAI, error) {
 	resp, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Model:    o.model,
+		Model:    modelName,
 		Messages: messages,
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", nil
+		return nil, nil
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	res := &models.ResponseAI{
+		Response:    resp.Choices[0].Message.Content,
+		InputToken:  int(resp.Usage.PromptTokens),
+		OutputToken: int(resp.Usage.CompletionTokens),
+	}
+
+	return res, nil
 }
