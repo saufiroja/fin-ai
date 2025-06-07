@@ -1,0 +1,190 @@
+graph TD
+    %% Authentication Flow
+    A[App Launch] --> B{User Logged In?}
+    B -->|No| C[Login/Register Screen]
+    B -->|Yes| D[Dashboard]
+    
+    C --> C1[Register Form]
+    C --> C2[Login Form]
+    C1 --> C3[Email Verification]
+    C3 --> C4[Profile Setup]
+    C4 --> D
+    C2 --> D
+    
+    %% Main Dashboard
+    D --> E[Show Financial Overview]
+    E --> E1[Load Balance Summary]
+    E --> E2[Load Recent Transactions]
+    E --> E3[Load Budget Status]
+    E --> E4[Generate Quick Insights]
+    
+    %% Navigation Options
+    D --> F[Transaction Management]
+    D --> G[AI Chat Assistant]
+    D --> H[OCR Scan Receipt]
+    D --> I[AI Insights & Analytics]
+    D --> J[Budget Management]
+    
+    %% Transaction Flow
+    F --> F1[View All Transactions]
+    F1 --> F2[Filter & Search]
+    F1 --> F3[Add Manual Transaction]
+    F1 --> F4[Edit Transaction]
+    F1 --> F5[Delete Transaction]
+    
+    F3 --> F6[Transaction Form]
+    F6 --> F7[AI Auto-Categorize]
+    F7 --> F8[Save to Database]
+    F8 --> F9[Update Statistics]
+    F9 --> D
+    
+    %% AI Chat Flow
+    G --> G1[Load Chat Sessions]
+    G1 --> G2[Select/Create Session]
+    G2 --> G3[Chat Interface]
+    G3 --> G4[User Input Message]
+    G4 --> G5[Send to AI API]
+    G5 --> G6[Process Financial Context]
+    G6 --> G7[Generate Response]
+    G7 --> G8[Display AI Response]
+    G8 --> G3
+    
+    %% Context Building for AI
+    G6 --> G6A[Fetch User Transactions]
+    G6 --> G6B[Fetch Budget Data]
+    G6 --> G6C[Fetch Financial Goals]
+    G6 --> G6D[Calculate Spending Patterns]
+    
+    %% OCR Flow
+    H --> H1[Camera/Upload Interface]
+    H1 --> H2[Select Image Source]
+    H2 --> H3[Capture/Upload Image]
+    H3 --> H4[Image Preprocessing]
+    H4 --> H5[OCR Processing]
+    H5 --> H6[Extract Text Data]
+    H6 --> H7[AI Parse Receipt]
+    H7 --> H8[Structure Data]
+    H8 --> H9[Review & Confirm]
+    H9 --> H10[Auto-Create Transaction]
+    H10 --> F8
+    
+    %% Error Handling for OCR
+    H5 --> H5A{OCR Success?}
+    H5A -->|No| H5B[Show Error Message]
+    H5B --> H1
+    H5A -->|Yes| H6
+    
+    H7 --> H7A{Parse Success?}
+    H7A -->|No| H7B[Manual Entry Option]
+    H7B --> F6
+    H7A -->|Yes| H8
+    
+    %% AI Insights Flow
+    I --> I1[Load User Analytics]
+    I1 --> I2[Spending Pattern Analysis]
+    I2 --> I3[Budget vs Actual Comparison]
+    I3 --> I4[Goal Progress Tracking]
+    I4 --> I5[Generate AI Insights]
+    I5 --> I6[Create Recommendations]
+    I6 --> I7[Display Insights]
+    
+    %% Background AI Processing
+    I5 --> I5A[Analyze Spending Trends]
+    I5 --> I5B[Detect Anomalies]
+    I5 --> I5C[Predict Future Expenses]
+    I5 --> I5D[Generate Saving Tips]
+    
+    %% Budget Management
+    J --> J1[View Current Budgets]
+    J1 --> J2[Create New Budget]
+    J1 --> J3[Edit Existing Budget]
+    J1 --> J4[Budget Performance]
+    
+    J2 --> J5[Budget Form]
+    J5 --> J6[AI Budget Suggestions]
+    J6 --> J7[Save Budget]
+    J7 --> J8[Setup Alerts]
+    J8 --> D
+    
+    %% Background Processes
+    subgraph "Background AI Services"
+        BG1[Daily Insights Generator]
+        BG2[Budget Alert Monitor]
+        BG3[Spending Pattern Analyzer]
+        BG4[Goal Progress Tracker]
+        BG5[Monthly Summary Generator]
+    end
+    
+    BG1 --> BG1A[Analyze Yesterday's Transactions]
+    BG1A --> BG1B[Generate Daily Tips]
+    BG1B --> BG1C[Send Push Notification]
+    
+    BG2 --> BG2A[Check Budget Limits]
+    BG2A --> BG2B{Over Budget?}
+    BG2B -->|Yes| BG2C[Send Alert]
+    BG2B -->|No| BG2D[Continue Monitoring]
+    
+    BG3 --> BG3A[Weekly Pattern Analysis]
+    BG3A --> BG3B[Identify Trends]
+    BG3B --> BG3C[Update User Insights]
+    
+    BG5 --> BG5A[Collect Month Data]
+    BG5A --> BG5B[Generate Summary Report]
+    BG5B --> BG5C[Create Recommendations]
+    BG5C --> BG5D[Save to Database]
+    
+    %% Data Flow Connections
+    F8 -.-> BG3
+    F8 -.-> BG2
+    J7 -.-> BG2
+    
+    %% User Settings & Profile
+    D --> K[User Settings]
+    K --> K1[Profile Management]
+    K --> K2[AI Preferences]
+    K --> K3[Notification Settings]
+    K --> K4[Export Data]
+    K --> K5[Logout]
+    
+    %% AI Preferences Flow
+    K2 --> K2A[Chat Personality Settings]
+    K2 --> K2B[Insight Frequency]
+    K2 --> K2C[Recommendation Types]
+    K2 --> K2D[Language Preferences]
+    
+    %% Export Flow
+    K4 --> K4A[Select Date Range]
+    K4A --> K4B[Choose Format]
+    K4B --> K4C[Generate Report]
+    K4C --> K4D[Download/Email]
+    
+    %% Error States
+    subgraph "Error Handling"
+        ERR1[Network Error]
+        ERR2[AI Service Down]
+        ERR3[OCR Failed]
+        ERR4[Data Corruption]
+    end
+    
+    ERR1 --> ERR1A[Show Offline Mode]
+    ERR1A --> ERR1B[Cache Operations]
+    ERR1B --> ERR1C[Sync When Online]
+    
+    ERR2 --> ERR2A[Fallback Responses]
+    ERR2A --> ERR2B[Basic Calculations]
+    
+    ERR3 --> ERR3A[Manual Entry]
+    ERR4 --> ERR4A[Data Recovery]
+    
+    %% Styling
+    classDef authStyle fill:#ff9999,stroke:#ff6666,color:#000
+    classDef mainStyle fill:#99ccff,stroke:#6699ff,color:#000
+    classDef aiStyle fill:#99ff99,stroke:#66cc66,color:#000
+    classDef dataStyle fill:#ffcc99,stroke:#ff9933,color:#000
+    classDef errorStyle fill:#ff6666,stroke:#cc0000,color:#fff
+    
+    class A,B,C,C1,C2,C3,C4 authStyle
+    class D,E,F,G,H,I,J,K mainStyle
+    class G5,G6,G7,H7,I5,I6,BG1,BG2,BG3,BG4,BG5 aiStyle
+    class F8,F9,H8,H10,I1,I2,I3,I4 dataStyle
+    class ERR1,ERR2,ERR3,ERR4 errorStyle

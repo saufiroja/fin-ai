@@ -24,6 +24,11 @@
 - **Golang** – Backend utama
 - **Fiber** – Web framework Golang
 - **PostgreSQL** – Penyimpanan data transaksi
+- **PGvector** – Extensi PostgreSQL untuk penyimpanan vektor AI (untuk semantic search)
+- **Redis** – Caching dan penyimpanan sesi
+- **Tesseract OCR** – Optical Character Recognition untuk membaca struk
+- **ImageMagick** – Image processing untuk optimasi gambar
+- **Minio** – Penyimpanan file untuk struk belanja
 - **OpenAI GPT-4.1** – Model AI untuk input, insight, dan percakapan
 - **Docker** – Containerization dan deployment
 
@@ -47,187 +52,1020 @@ Database migration berjalan otomatis saat container aktif.
 
 ## 📚 API Documentation
 
-### 1. 🔐 Authentication
+### 1. Authentication
 
 | Method | Endpoint                | Deskripsi     |
 | ------ | ----------------------- | ------------- |
 | POST   | `/api/v1/auth/register` | Register user |
 | POST   | `/api/v1/auth/login`    | Login user    |
+| POST   | `/api/v1/auth/logout`   | Logout user   |
+| POST   | `/api/v1/auth/refresh`  | Refresh token |
 
-### 2. 👤 User
+### 2. User
 
-| Method | Endpoint                | Deskripsi     |
-| ------ | ----------------------- | ------------- |
-| GET    | `/api/v1/user`          | Get user info |
-| PUT    | `/api/v1/user/:user_id` | Update user   |
-| DELETE | `/api/v1/user/:user_id` | Delete user   |
+| Method | Endpoint                | Deskripsi           |
+| ------ | ----------------------- | ------------------- |
+| GET    | `/api/v1/user`          | Get user profile    |
+| PUT    | `/api/v1/user/:user_id` | Update user profile |
+| DELETE | `/api/v1/user/:user_id` | Delete user profile |
 
-### 3. 💸 Transactions
+### 3. Transactions
 
-| Method | Endpoint                               | Deskripsi                |
-| ------ | -------------------------------------- | ------------------------ |
-| GET    | `/api/v1/transactions`                 | Get all transactions     |
-| GET    | `/api/v1/transactions/:transaction_id` | Get transaction by ID    |
-| POST   | `/api/v1/transactions`                 | Create new transaction   |
-| PUT    | `/api/v1/transactions/:transaction_id` | Update transaction by ID |
-| DELETE | `/api/v1/transactions/:transaction_id` | Delete transaction by ID |
+| Method | Endpoint                               | Deskripsi                                |
+| ------ | -------------------------------------- | ---------------------------------------- |
+| GET    | `/api/v1/transactions`                 | List with filters (date, category, type) |
+| POST   | `/api/v1/transactions`                 | Create new transaction                   |
+| GET    | `/api/v1/transactions/:transaction_id` | Get specific transaction                 |
+| PUT    | `/api/v1/transactions/:transaction_id` | Update transaction                       |
+| DELETE | `/api/v1/transactions/:transaction_id` | Delete transaction                       |
+| GET    | `/api/v1/transactions/stats`           | Transaction statistics                   |
 
-### 4. 📊 Reports
+### 4. Categories
+
+| Method | Endpoint                     | Deskripsi           |
+| ------ | ---------------------------- | ------------------- |
+| GET    | `/api/v1/categories`         | Get all categories  |
+| POST   | `/api/v1/categories`         | Create new category |
+| PUT    | `/api/v1/categories/:cat_id` | Update category     |
+| DELETE | `/api/v1/categories/:cat_id` | Delete category     |
+
+### 5. Budgets
 
 | Method | Endpoint                     | Deskripsi                  |
 | ------ | ---------------------------- | -------------------------- |
-| GET    | `/api/v1/reports`            | Get monthly/yearly reports |
-| GET    | `/api/v1/reports/:report_id` | Get report by ID           |
-| POST   | `/api/v1/reports`            | Create new report          |
-| PUT    | `/api/v1/reports/:report_id` | Update report by ID        |
-| DELETE | `/api/v1/reports/:report_id` | Delete report by ID        |
+| GET    | `/api/v1/budgets`            | List budgets by month/year |
+| POST   | `/api/v1/budgets`            | Create new report          |
+| GET    | `/api/v1/budgets/:report_id` | Get specific budget        |
+| PUT    | `/api/v1/budgets/:report_id` | Update report by ID        |
+| DELETE | `/api/v1/budgets/:report_id` | Delete report by ID        |
+| GET    | `/api/v1/budgets/status`     | Budget vs actual spending  |
 
-### 5. 🧠 AI Features
+### 6. OCR & Receipts
 
-| Method | Endpoint          | Deskripsi                                                  |
-| ------ | ----------------- | ---------------------------------------------------------- |
-| POST   | `/api/v1/ai/chat` | Endpoint terpadu untuk AI chat, OCR, prediksi, dan lainnya |
+| Method | Endpoint                               | Deskripsi               |
+| ------ | -------------------------------------- | ----------------------- |
+| POST   | `/api/v1/receipts/upload`              | Upload receipt image    |
+| GET    | `/api/v1/receipts`                     | List user receipts      |
+| GET    | `/api/v1/receipts/:receipt_id`         | Get specific receipt    |
+| DELETE | `/api/v1/receipts/:receipt_id`         | Delete receipt          |
+| POST   | `/api/v1/receipts/:receipt_id/extract` | Re-extract receipt data |
+| POST   | `/api/v1/receipts/:receipt_id/confirm` | Confirm receipt data    |
 
-#### ✉️ Contoh Payload untuk `/api/v1/ai/chat`
+### 7. AI Chat
 
-```json
-{
-  "mode": "ocr", // Atau: "consultation", "summary", "prediction", "planner"
-  "message": "Ini struk belanja bulan ini...",
-  "file_base64": "..." // Opsional, digunakan jika mode = "ocr"
+| Method | Endpoint                                        | Deskripsi                      |
+| ------ | ----------------------------------------------- | ------------------------------ |
+| GET    | `/api/v1/ai/chat/sessions`                      | List chat sessions             |
+| POST   | `/api/v1/ai/chat/sessions`                      | Create new chat session        |
+| GET    | `/api/v1/ai/chat/sessions/:session_id`          | Get chat session with messages |
+| DELETE | `/api/v1/ai/chat/sessions/:session_id`          | Delete chat session            |
+| POST   | `/api/v1/ai/chat/sessions/:session_id/messages` | Send message to chat session   |
+
+### 8. AI Insights & Analytics
+
+| Method | Endpoint                          | Deskripsi                  |
+| ------ | --------------------------------- | -------------------------- |
+| GET    | `/api/v1/ai/insights`             | List user insights         |
+| GET    | `/api/v1/ai/insights/monthly`     | Get monthly insights       |
+| GET    | `/api/v1/ai/insights/weekly`      | Get weekly insights        |
+| GET    | `/api/v1/ai/insights/yearly`      | Get yearly insights        |
+| POST   | `/api/v1/ai/insights/generated`   | Trigger insight generation |
+| GET    | `/api/v1/ai/analytics/spending`   | Spending analytics         |
+| GET    | `/api/v1/ai/analytics/saving`     | Saving analytics           |
+| GET    | `/api/v1/ai/analytics/trends`     | Spending trends            |
+| GET    | `/api/v1/ai/analytics/categories` | Category breakdown         |
+
+### 9. Financial Goals
+
+| Method | Endpoint                       | Deskripsi            |
+| ------ | ------------------------------ | -------------------- |
+| GET    | `/api/v1/goals`                | List financial goals |
+| POST   | `/api/v1/goals`                | Create new goal      |
+| GET    | `/api/v1/goals/:goal_id`       | Get specific goal    |
+| PUT    | `/api/v1/goals/:goal_id`       | Update goal          |
+| DELETE | `/api/v1/goals/:goal_id`       | Delete goal          |
+| POST   | `/api/v1/goals/:goal_id/track` | Track goal progress  |
+
+### 10. AI Summary
+
+| Method | Endpoint                    | Deskripsi                            |
+| ------ | --------------------------- | ------------------------------------ |
+| GET    | `/api/v1/summaries`         | List summaries                       |
+| GET    | `/api/v1/summaries/monthly` | Monthly summary                      |
+| GET    | `/api/v1/summaries/weekly`  | Weekly summary                       |
+| POST   | `/api/v1/summaries`         | Generate summary for specific period |
+
+### 12. Dashboard & Reports
+
+| Method | Endpoint                  | Deskripsi                          |
+| ------ | ------------------------- | ---------------------------------- |
+| GET    | `/api/v1/dashboard`       | Get user dashboard data            |
+| GET    | `/api/v1/reports/monthly` | Get monthly financial report       |
+| GET    | `/api/v1/reports/weekly`  | Get weekly financial report        |
+| GET    | `/api/v1/reports/yearly`  | Get yearly financial report        |
+| GET    | `api/v1/reports/export`   | Export financial report to CSV/PDF |
+
+### 13. Settings & Preferences
+
+| Method | Endpoint              | Deskripsi            |
+| ------ | --------------------- | -------------------- |
+| GET    | `/api/v1/settings`    | Get user settings    |
+| PUT    | `/api/v1/settings`    | Update user settings |
+| GET    | `/api/v1/settings/ai` | AI-specific settings |
+| PUT    | `/api/v1/settings/ai` | Update AI Preference |
+
+### 14. Webhooks (For background processing)
+
+| Method | Endpoint                           | Deskripsi               |
+| ------ | ---------------------------------- | ----------------------- |
+| POST   | `/api/v1/webhooks/daily/insights`  | Trigger daily insights  |
+| POST   | `/api/v1/webhooks/weekly/summary`  | Trigger weekly summaryy |
+| POST   | `/api/v1/webhooks/monthly/summary` | Trigger monthly summary |
+
+# Financial Tracker AI - Application Flow Documentation
+
+## 1. 🔐 Authentication Flow
+
+### Registration Process
+
+```
+User Opens App → Check Token → No Token → Registration Screen
+├── Fill Registration Form (Name, Email, Password)
+├── Submit to API: POST /api/v1/auth/register
+├── Email Verification (Optional)
+├── Profile Setup (Currency, Timezone)
+└── Generate JWT Token → Navigate to Dashboard
+```
+
+### Login Process
+
+```
+Login Screen → Submit Credentials
+├── API Call: POST /api/v1/auth/login
+├── Validate Credentials
+├── Generate JWT Token
+├── Store Token in Secure Storage
+└── Navigate to Dashboard
+```
+
+---
+
+## 2. 📊 Dashboard Flow
+
+### Initial Load Sequence
+
+```
+Dashboard Mount
+├── Load User Profile: GET /api/v1/auth/profile
+├── Load Financial Summary: GET /api/v1/dashboard
+│   ├── Total Income/Expense (Current Month)
+│   ├── Budget Status
+│   └── Account Balance
+├── Load Recent Transactions: GET /api/v1/transactions?limit=5
+└── Generate Quick Insights: GET /api/v1/insights?type=quick
+```
+
+### Real-time Updates
+
+```
+Every Transaction Created/Updated
+├── Update Dashboard Statistics
+├── Refresh Budget Status
+├── Trigger Background AI Analysis
+└── Update UI Components
+```
+
+---
+
+## 3. 💳 Transaction Management Flow
+
+### View Transactions
+
+```
+Transactions Screen Load
+├── API Call: GET /api/v1/transactions
+├── Apply Filters (Date, Category, Type)
+├── Pagination Support
+├── Search Functionality
+└── Display with AI-Generated Categories
+```
+
+### Add Transaction (Manual)
+
+```
+Add Transaction Button → Transaction Form
+├── Fill Form Data
+├── AI Auto-Categorization
+│   ├── Analyze Description
+│   ├── Compare with Historical Data
+│   └── Suggest Category (with confidence score)
+├── Submit: POST /api/v1/transactions
+├── Update Local State
+├── Refresh Dashboard
+└── Trigger Background AI Processing
+```
+
+### Transaction Processing Pipeline
+
+```
+New Transaction Created
+├── Save to Database
+├── Update User Statistics
+├── Check Budget Limits
+├── Trigger AI Analysis
+│   ├── Pattern Recognition
+│   ├── Anomaly Detection
+│   └── Update Spending Insights
+└── Send Notifications (if needed)
+```
+
+---
+
+## 4. 🤖 AI Chat Assistant Flow
+
+### Chat Session Management
+
+```
+Chat Screen Load
+├── Load Chat Sessions: GET /api/v1/chat/sessions
+├── Select/Create Session
+└── Load Chat History: GET /api/v1/chat/sessions/{id}
+```
+
+### Message Processing
+
+```
+User Sends Message
+├── Display User Message
+├── Show "AI Thinking" Indicator
+├── Build Context for AI:
+│   ├── GET /api/v1/transactions (Recent)
+│   ├── GET /api/v1/budgets (Current)
+│   ├── GET /api/v1/insights (Latest)
+│   └── GET /api/v1/analytics/spending
+├── Send to AI API: POST /api/v1/chat/sessions/{id}/messages
+│   ├── Message + Context
+│   ├── LLM Processing (GPT-4)
+│   ├── Generate Response
+│   └── Log Conversation
+└── Display AI Response
+```
+
+### AI Context Building
+
+```go
+func buildAIContext(userID string) map[string]interface{} {
+    context := make(map[string]interface{})
+    context["recent_transactions"] = getRecentTransactions(userID, 20)
+    context["monthly_summary"] = getMonthlySummary(userID)
+    context["budget_status"] = getBudgetStatus(userID)
+    context["financial_goals"] = getFinancialGoals(userID)
+    context["spending_patterns"] = analyzeSpendingPatterns(userID)
+    context["user_preferences"] = getUserPreferences(userID)
+    return context
 }
 ```
 
-- `mode`: Menentukan jenis respons AI yang diminta.
-- `message`: Prompt utama dari user.
-- `file_base64`: Opsional. Base64 encoded string dari file struk belanja.
+---
 
-Jika `mode` tidak diisi, maka default dianggap sebagai "consultation".
+## 5. 📷 OCR Receipt Processing Flow
 
-Berikut adalah versi lengkap dari `README.md` yang siap untuk kamu salin dan gunakan:
+### Image Upload & Processing
 
-## 🔄 Fin AI - Application Flow
+```
+Upload Receipt Image
+├── Image Validation (Size, Format)
+├── Image Preprocessing:
+│   ├── Resize & Optimize
+│   ├── Enhance Contrast
+│   ├── Noise Reduction
+│   └── Orientation Correction
+├── OCR Processing (Tesseract):
+│   ├── Text Extraction
+│   ├── Confidence Scoring
+│   └── Raw Text Output
+├── AI Text Processing (GPT-4):
+│   ├── Parse Receipt Structure
+│   ├── Extract Merchant Info
+│   ├── Extract Items & Prices
+│   ├── Calculate Total
+│   └── Suggest Category
+└── Present Results for Review
+```
 
-Dokumentasi alur sistem Fin AI untuk pencatatan dan manajemen keuangan pribadi berbasis AI.
+### OCR Result Processing
+
+```
+OCR Results Retrieved
+├── Display Parsed Data
+├── User Review & Edit
+├── Confirm Transaction Creation
+├── Save Receipt: POST /api/v1/receipts
+├── Create Transaction: POST /api/v1/transactions
+└── Update Dashboard
+```
+
+### Error Handling
+
+```
+OCR Processing Failed
+├── Show Error Message
+├── Provide Manual Entry Option
+├── Allow Re-upload
+└── Log Error for Analysis
+```
 
 ---
 
-### 1. 🧑‍💻 User Interaction
+## 6. 💡 AI Insights & Analytics Flow
 
-- **User Registration & Login**
-  - Endpoint:
-    - `POST /api/v1/auth/register`
-    - `POST /api/v1/auth/login`
-  - Output:
-    - JWT Token untuk autentikasi
-- **Dashboard Akses**
-  - User menggunakan token untuk mengakses seluruh fitur aplikasi
+### Insights Generation
 
----
+```
+Insights Screen Load
+├── Load User Analytics: GET /api/v1/analytics
+├── Background Processing:
+│   ├── Spending Pattern Analysis
+│   ├── Budget Performance Review
+│   ├── Goal Progress Tracking
+│   ├── Anomaly Detection
+│   └── Trend Prediction
+├── Generate AI Insights: POST /api/v1/insights/generate
+└── Display Personalized Recommendations
+```
 
-### 2. 💸 Transaksi Keuangan
+### Types of AI Analysis
 
-#### a. Input Manual
+```
+Spending Pattern Analysis
+├── Daily/Weekly/Monthly Trends
+├── Category-wise Breakdown
+├── Peak Spending Times
+├── Recurring Transaction Detection
+└── Seasonal Pattern Recognition
 
-- Endpoint: `POST /api/v1/transactions`
-- Input: Form transaksi seperti kategori, deskripsi, nominal, sumber, tanggal
-- Proses:
-  - Validasi data
-  - Simpan ke tabel `transactions`
+Budget Analysis
+├── Budget vs Actual Comparison
+├── Overspending Alerts
+├── Optimization Suggestions
+├── Future Budget Recommendations
+└── Savings Opportunities
 
-##### b. Input via Chat Prompt / OCR
-
-- Endpoint: `POST /api/v1/ai/chat`
-- Payload:
-  ```json
-  {
-    "user_id": "uuid",
-    "mode": "chat" | "ocr",
-    "message": "Saya belanja di Alfamart Rp25.000",
-    "image_base64": "base64string (hanya jika mode: ocr)"
-  }
-  ```
-
-* Proses:
-
-  - Jika `mode = ocr`: lakukan ekstraksi struk dengan OCR
-  - Jika `mode = chat`: gunakan model GPT untuk memahami input natural
-  - Transaksi yang dikenali disimpan ke tabel `transactions`
-  - Riwayat interaksi disimpan ke tabel `log_messages`
+Goal Tracking
+├── Progress Monitoring
+├── Achievement Prediction
+├── Strategy Adjustments
+└── Milestone Celebrations
+```
 
 ---
 
-### 3. 📊 Budget & Laporan
+## 7. 🎯 Budget Management Flow
 
-#### a. Budgeting (belum ada API docs nya)
+### Budget Creation
 
-- Endpoint: `POST /api/v1/budgets`
-- Input: Kategori, batas anggaran, bulan/tahun
-- Proses:
+```
+Create Budget
+├── Budget Form with AI Suggestions
+├── Historical Spending Analysis
+├── Recommended Budget Amounts
+├── Submit: POST /api/v1/budgets
+├── Setup Alert Thresholds
+└── Schedule Monitoring Jobs
+```
 
-  - Disimpan ke tabel `budgets`
-  - Digunakan untuk perbandingan dengan realisasi transaksi
+### Budget Monitoring
 
-#### b. Laporan Bulanan & Tahunan
-
-- Endpoint: `GET /api/v1/reports`
-- Proses:
-
-  - Query semua transaksi berdasarkan rentang waktu
-  - Gabungkan dengan informasi budget
-  - Buat laporan dalam bentuk summary atau visualisasi
-
----
-
-### 4. 🤖 AI Features
-
-#### a. Prediksi Pengeluaran
-
-- Endpoint: `POST /api/v1/ai/chat`
-- Input: `user_id`
-- Proses:
-
-  - Query histori transaksi
-  - Gunakan model prediksi untuk estimasi pengeluaran bulan depan
-
-#### b. Smart Summary
-
-- Endpoint: `POST /api/v1/ai/chat`
-- Proses:
-
-  - Ambil transaksi bulan berjalan
-  - Kirim ke LLM untuk dibuatkan ringkasan keuangan otomatis
-  - Gunakan model untuk analisis dan rekomendasi pengeluaran
+```
+Daily Budget Check (Background Job)
+├── Calculate Current Spending
+├── Compare with Budget Limits
+├── Check Alert Thresholds:
+│   ├── 50% Budget Used
+│   ├── 80% Budget Used
+│   ├── 100% Budget Exceeded
+├── Send Notifications
+└── Update Budget Status
+```
 
 ---
 
-### 5. 📦 Penyimpanan & Struktur Data
+## 8. 🔄 Background AI Services
 
-#### Database Tables
+### Daily Insights Generator
 
-- `users`: Data pengguna
-- `transactions`: Catatan transaksi pengguna
-- `categories`: Kategori transaksi (income / expense)
-- `budgets`: Batas anggaran per kategori
-- `receipts`: Data struk belanja (OCR)
-- `log_messages`: Riwayat interaksi dengan AI
-- `insights`: Analisis atau insight dari AI (berbasis JSON)
+```go
+func dailyInsightsJob() {
+    for _, user := range activeUsers {
+        yesterdayData := getTransactions(user, yesterday)
+        insights := generateDailyInsights(yesterdayData)
+        saveInsights(user, insights)
+        sendNotification(user, insights.summary)
+    }
+}
+```
+
+### Weekly Pattern Analyzer
+
+```go
+func weeklyPatternAnalysisJob() {
+    for _, user := range activeUsers {
+        weekData := getTransactions(user, last7Days)
+        patterns := analyzeSpendingPatterns(weekData)
+        recommendations := generateRecommendations(patterns)
+        updateUserInsights(user, patterns, recommendations)
+    }
+}
+```
+
+### Monthly Summary Generator
+
+```go
+func monthlySummaryJob() {
+    for _, user := range activeUsers {
+        monthData := getTransactions(user, last30Days)
+        summary := generateMonthlySummary(monthData)
+        report := createSummaryReport(summary)
+        saveSummary(user, report)
+        sendMonthlyEmail(user, report)
+    }
+}
+```
 
 ---
 
-### 6. 🐳 Deployment Flow
+## 9. 📱 Real-time Features
 
-1. Konfigurasi `.env`
-2. Jalankan `docker-compose up --build`
-3. Database dan migration berjalan otomatis
-4. Akses aplikasi di `http://localhost:8080`
+### Push Notifications
+
+```
+Notification Triggers:
+├── Budget Threshold Reached (50%, 80%, 100%)
+├── Unusual Spending Detected
+├── Daily Insights Available
+├── Goal Milestone Reached
+├── Bill Reminder (if recurring transaction detected)
+└── Weekly/Monthly Summary Ready
+```
+
+### Live Updates
+
+```
+Real-time Dashboard Updates:
+├── New Transaction Added → Update Balance
+├── Budget Modified → Refresh Budget Status
+├── Goal Progress → Update Progress Bars
+└── AI Insights Generated → Show Notification Badge
+```
 
 ---
 
-### 📌 Catatan
+## 10. 🛡️ Error Handling & Offline Support
 
-- Semua endpoint memerlukan token JWT (kecuali register/login)
-- AI endpoint akan berkembang berdasarkan kebutuhan dan feedback pengguna
+### Network Error Handling
+
+```
+Network Connection Lost
+├── Switch to Offline Mode
+├── Cache User Operations
+├── Store in Local Database
+├── Show Offline Indicator
+└── Sync When Connection Restored
+```
+
+### AI Service Downtime
+
+```
+AI Service Unavailable
+├── Use Cached Responses
+├── Provide Basic Calculations
+├── Show Service Status
+├── Queue AI Requests for Later
+└── Graceful Degradation
+```
+
+### Data Validation & Recovery
+
+```
+Data Integrity Checks:
+├── Transaction Validation
+├── Budget Consistency
+├── User Data Backup
+├── Automatic Recovery
+└── Manual Recovery Options
+```
+
+---
+
+## 11. 🔧 Technical Implementation Notes
+
+### State Management
+
+```
+Global State Structure:
+├── user: { profile, preferences, settings }
+├── transactions: { items, filters, pagination }
+├── budgets: { current, history, alerts }
+├── chat: { sessions, activeSession, messages }
+├── insights: { current, history, recommendations }
+└── ui: { loading, errors, notifications }
+```
+
+### API Rate Limiting
+
+```
+Rate Limiting Strategy:
+├── AI Chat: 100 requests/hour per user
+├── OCR Processing: 50 requests/hour per user
+├── General API: 1000 requests/hour per user
+├── Background Jobs: No limit
+└── Caching for frequently accessed data
+```
+
+### Performance Optimization
+
+```
+Optimization Strategies:
+├── Image Compression for OCR
+├── Database Query Optimization
+├── Redis Caching for AI Responses
+├── Lazy Loading for Transactions
+├── Background Processing for Heavy AI Tasks
+└── CDN for Static Assets
+```
+
+---
+
+## 12. 📊 Analytics & Monitoring
+
+### User Behavior Tracking
+
+```
+Track User Actions:
+├── Feature Usage Statistics
+├── AI Chat Engagement
+├── OCR Success Rates
+├── Insight Interaction Rates
+└── User Retention Metrics
+```
+
+### System Health Monitoring
+
+```
+Monitor System Performance:
+├── API Response Times
+├── AI Service Uptime
+├── OCR Processing Success Rate
+├── Database Performance
+├── Background Job Status
+└── Error Rates & Types
+```
+
+---
+
+# Financial Tracker AI - Application Flow Documentation
+
+## 1. 🔐 Authentication Flow
+
+### Registration Process
+
+```
+User Opens App → Check Token → No Token → Registration Screen
+├── Fill Registration Form (Name, Email, Password)
+├── Submit to API: POST /api/v1/auth/register
+├── Email Verification (Optional)
+├── Profile Setup (Currency, Timezone)
+└── Generate JWT Token → Navigate to Dashboard
+```
+
+### Login Process
+
+```
+Login Screen → Submit Credentials
+├── API Call: POST /api/v1/auth/login
+├── Validate Credentials
+├── Generate JWT Token
+├── Store Token in Secure Storage
+└── Navigate to Dashboard
+```
+
+---
+
+## 2. 📊 Dashboard Flow
+
+### Initial Load Sequence
+
+```
+Dashboard Mount
+├── Load User Profile: GET /api/v1/auth/profile
+├── Load Financial Summary: GET /api/v1/dashboard
+│   ├── Total Income/Expense (Current Month)
+│   ├── Budget Status
+│   └── Account Balance
+├── Load Recent Transactions: GET /api/v1/transactions?limit=5
+└── Generate Quick Insights: GET /api/v1/insights?type=quick
+```
+
+### Real-time Updates
+
+```
+Every Transaction Created/Updated
+├── Update Dashboard Statistics
+├── Refresh Budget Status
+├── Trigger Background AI Analysis
+└── Update UI Components
+```
+
+---
+
+## 3. 💳 Transaction Management Flow
+
+### View Transactions
+
+```
+Transactions Screen Load
+├── API Call: GET /api/v1/transactions
+├── Apply Filters (Date, Category, Type)
+├── Pagination Support
+├── Search Functionality
+└── Display with AI-Generated Categories
+```
+
+### Add Transaction (Manual)
+
+```
+Add Transaction Button → Transaction Form
+├── Fill Form Data
+├── AI Auto-Categorization
+│   ├── Analyze Description
+│   ├── Compare with Historical Data
+│   └── Suggest Category (with confidence score)
+├── Submit: POST /api/v1/transactions
+├── Update Local State
+├── Refresh Dashboard
+└── Trigger Background AI Processing
+```
+
+### Transaction Processing Pipeline
+
+```
+New Transaction Created
+├── Save to Database
+├── Update User Statistics
+├── Check Budget Limits
+├── Trigger AI Analysis
+│   ├── Pattern Recognition
+│   ├── Anomaly Detection
+│   └── Update Spending Insights
+└── Send Notifications (if needed)
+```
+
+---
+
+## 4. 🤖 AI Chat Assistant Flow
+
+### Chat Session Management
+
+```
+Chat Screen Load
+├── Load Chat Sessions: GET /api/v1/chat/sessions
+├── Select/Create Session
+└── Load Chat History: GET /api/v1/chat/sessions/{id}
+```
+
+### Message Processing
+
+```
+User Sends Message
+├── Display User Message
+├── Show "AI Thinking" Indicator
+├── Build Context for AI:
+│   ├── GET /api/v1/transactions (Recent)
+│   ├── GET /api/v1/budgets (Current)
+│   ├── GET /api/v1/insights (Latest)
+│   └── GET /api/v1/analytics/spending
+├── Send to AI API: POST /api/v1/chat/sessions/{id}/messages
+│   ├── Message + Context
+│   ├── LLM Processing (GPT-4)
+│   ├── Generate Response
+│   └── Log Conversation
+└── Display AI Response
+```
+
+### AI Context Building
+
+```python
+def build_ai_context(user_id):
+    context = {
+        "recent_transactions": get_recent_transactions(user_id, limit=20),
+        "monthly_summary": get_monthly_summary(user_id),
+        "budget_status": get_budget_status(user_id),
+        "financial_goals": get_financial_goals(user_id),
+        "spending_patterns": analyze_spending_patterns(user_id),
+        "user_preferences": get_user_preferences(user_id)
+    }
+    return context
+```
+
+---
+
+## 5. 📷 OCR Receipt Processing Flow
+
+### Image Upload & Processing
+
+```
+Upload Receipt Image
+├── Image Validation (Size, Format)
+├── Image Preprocessing:
+│   ├── Resize & Optimize
+│   ├── Enhance Contrast
+│   ├── Noise Reduction
+│   └── Orientation Correction
+├── OCR Processing (Tesseract):
+│   ├── Text Extraction
+│   ├── Confidence Scoring
+│   └── Raw Text Output
+├── AI Text Processing (GPT-4):
+│   ├── Parse Receipt Structure
+│   ├── Extract Merchant Info
+│   ├── Extract Items & Prices
+│   ├── Calculate Total
+│   └── Suggest Category
+└── Present Results for Review
+```
+
+### OCR Result Processing
+
+```
+OCR Results Retrieved
+├── Display Parsed Data
+├── User Review & Edit
+├── Confirm Transaction Creation
+├── Save Receipt: POST /api/v1/receipts
+├── Create Transaction: POST /api/v1/transactions
+└── Update Dashboard
+```
+
+### Error Handling
+
+```
+OCR Processing Failed
+├── Show Error Message
+├── Provide Manual Entry Option
+├── Allow Re-upload
+└── Log Error for Analysis
+```
+
+---
+
+## 6. 💡 AI Insights & Analytics Flow
+
+### Insights Generation
+
+```
+Insights Screen Load
+├── Load User Analytics: GET /api/v1/analytics
+├── Background Processing:
+│   ├── Spending Pattern Analysis
+│   ├── Budget Performance Review
+│   ├── Goal Progress Tracking
+│   ├── Anomaly Detection
+│   └── Trend Prediction
+├── Generate AI Insights: POST /api/v1/insights/generate
+└── Display Personalized Recommendations
+```
+
+### Types of AI Analysis
+
+```
+Spending Pattern Analysis
+├── Daily/Weekly/Monthly Trends
+├── Category-wise Breakdown
+├── Peak Spending Times
+├── Recurring Transaction Detection
+└── Seasonal Pattern Recognition
+
+Budget Analysis
+├── Budget vs Actual Comparison
+├── Overspending Alerts
+├── Optimization Suggestions
+├── Future Budget Recommendations
+└── Savings Opportunities
+
+Goal Tracking
+├── Progress Monitoring
+├── Achievement Prediction
+├── Strategy Adjustments
+└── Milestone Celebrations
+```
+
+---
+
+## 7. 🎯 Budget Management Flow
+
+### Budget Creation
+
+```
+Create Budget
+├── Budget Form with AI Suggestions
+├── Historical Spending Analysis
+├── Recommended Budget Amounts
+├── Submit: POST /api/v1/budgets
+├── Setup Alert Thresholds
+└── Schedule Monitoring Jobs
+```
+
+### Budget Monitoring
+
+```
+Daily Budget Check (Background Job)
+├── Calculate Current Spending
+├── Compare with Budget Limits
+├── Check Alert Thresholds:
+│   ├── 50% Budget Used
+│   ├── 80% Budget Used
+│   ├── 100% Budget Exceeded
+├── Send Notifications
+└── Update Budget Status
+```
+
+---
+
+## 8. 🔄 Background AI Services
+
+### Daily Insights Generator
+
+```python
+# Runs every morning at 8 AM
+def daily_insights_job():
+    for user in active_users:
+        yesterday_data = get_transactions(user, yesterday)
+        insights = generate_daily_insights(yesterday_data)
+        save_insights(user, insights)
+        send_notification(user, insights.summary)
+```
+
+### Weekly Pattern Analyzer
+
+```python
+# Runs every Sunday night
+def weekly_analysis_job():
+    for user in active_users:
+        week_data = get_transactions(user, last_7_days)
+        patterns = analyze_spending_patterns(week_data)
+        recommendations = generate_recommendations(patterns)
+        update_user_insights(user, patterns, recommendations)
+```
+
+### Monthly Summary Generator
+
+```python
+# Runs on 1st of every month
+def monthly_summary_job():
+    for user in active_users:
+        month_data = get_transactions(user, last_month)
+        summary = generate_monthly_summary(month_data)
+        report = create_summary_report(summary)
+        save_summary(user, report)
+        send_monthly_email(user, report)
+```
+
+---
+
+## 9. 📱 Real-time Features
+
+### Push Notifications
+
+```
+Notification Triggers:
+├── Budget Threshold Reached (50%, 80%, 100%)
+├── Unusual Spending Detected
+├── Daily Insights Available
+├── Goal Milestone Reached
+├── Bill Reminder (if recurring transaction detected)
+└── Weekly/Monthly Summary Ready
+```
+
+### Live Updates
+
+```
+Real-time Dashboard Updates:
+├── New Transaction Added → Update Balance
+├── Budget Modified → Refresh Budget Status
+├── Goal Progress → Update Progress Bars
+└── AI Insights Generated → Show Notification Badge
+```
+
+---
+
+## 10. 🛡️ Error Handling & Offline Support
+
+### Network Error Handling
+
+```
+Network Connection Lost
+├── Switch to Offline Mode
+├── Cache User Operations
+├── Store in Local Database
+├── Show Offline Indicator
+└── Sync When Connection Restored
+```
+
+### AI Service Downtime
+
+```
+AI Service Unavailable
+├── Use Cached Responses
+├── Provide Basic Calculations
+├── Show Service Status
+├── Queue AI Requests for Later
+└── Graceful Degradation
+```
+
+### Data Validation & Recovery
+
+```
+Data Integrity Checks:
+├── Transaction Validation
+├── Budget Consistency
+├── User Data Backup
+├── Automatic Recovery
+└── Manual Recovery Options
+```
+
+---
+
+## 11. 🔧 Technical Implementation Notes
+
+### State Management
+
+```
+Global State Structure:
+├── user: { profile, preferences, settings }
+├── transactions: { items, filters, pagination }
+├── budgets: { current, history, alerts }
+├── chat: { sessions, activeSession, messages }
+├── insights: { current, history, recommendations }
+└── ui: { loading, errors, notifications }
+```
+
+### API Rate Limiting
+
+```
+Rate Limiting Strategy:
+├── AI Chat: 100 requests/hour per user
+├── OCR Processing: 50 requests/hour per user
+├── General API: 1000 requests/hour per user
+├── Background Jobs: No limit
+└── Caching for frequently accessed data
+```
+
+### Performance Optimization
+
+```
+Optimization Strategies:
+├── Image Compression for OCR
+├── Database Query Optimization
+├── Redis Caching for AI Responses
+├── Lazy Loading for Transactions
+├── Background Processing for Heavy AI Tasks
+└── CDN for Static Assets
+```
+
+---
+
+## 12. 📊 Analytics & Monitoring
+
+### User Behavior Tracking
+
+```
+Track User Actions:
+├── Feature Usage Statistics
+├── AI Chat Engagement
+├── OCR Success Rates
+├── Insight Interaction Rates
+└── User Retention Metrics
+```
+
+### System Health Monitoring
+
+```
+Monitor System Performance:
+├── API Response Times
+├── AI Service Uptime
+├── OCR Processing Success Rate
+├── Database Performance
+├── Background Job Status
+└── Error Rates & Types
+```
+
+---
+
+This comprehensive flow documentation provides the blueprint for implementing your Financial Tracker AI application. Each flow includes technical details, API endpoints, error handling, and optimization considerations.
+
+## Flow Diagram
+
+![Flow Diagram](./images/fin-ai-flow.png)
 
 ## Database
 

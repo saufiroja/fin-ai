@@ -13,3 +13,7 @@ CREATE TABLE budgets (
     CONSTRAINT fk_budgets_user FOREIGN KEY (user_id) REFERENCES users(user_id),
     CONSTRAINT fk_budgets_category FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
+
+CREATE INDEX idx_budgets_user_month ON budgets(user_id, month, year);
+CREATE INDEX idx_budgets_category ON budgets(category_id);
+CREATE INDEX idx_budgets_budget_id ON budgets(budget_id);

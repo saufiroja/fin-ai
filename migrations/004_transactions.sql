@@ -10,8 +10,14 @@ CREATE TABLE transactions (
     amount INTEGER NOT NULL,
     source VARCHAR(100) NOT NULL,
     transaction_date TIMESTAMP,
+    ai_category_confidence DECIMAL(3,2) DEFAULT 0.00,
+    is_auto_categorized BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     CONSTRAINT fk_transactions_user FOREIGN KEY (user_id) REFERENCES users(user_id),
     CONSTRAINT fk_transactions_category FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
+
+CREATE INDEX idx_transactions_transaction_id ON transactions(transaction_id);
+CREATE INDEX idx_transactions_user_date ON transactions(user_id, transaction_date DESC);
+CREATE INDEX idx_transactions_category_type ON transactions(category_id, type);

@@ -12,3 +12,5 @@ CREATE TABLE chat_messages (
     deleted_at TIMESTAMP,
     CONSTRAINT fk_chat_messages_chat_session FOREIGN KEY (chat_session_id) REFERENCES chat_sessions(chat_session_id)
 );
+
+CREATE INDEX idx_chat_messages_session ON chat_messages(chat_session_id, created_at DESC);

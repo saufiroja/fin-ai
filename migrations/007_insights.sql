@@ -10,3 +10,7 @@ CREATE TABLE insights (
     updated_at TIMESTAMP,
     CONSTRAINT fk_insights_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+CREATE INDEX idx_insights_user ON insights(user_id);
+CREATE INDEX idx_insights_insight_id ON insights(insight_id);
+CREATE INDEX idx_insights_type ON insights(insight_type);
