@@ -1,4 +1,4 @@
-package domains
+package auth
 
 import (
 	"github.com/gofiber/fiber/v2"
@@ -7,7 +7,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/models"
 )
 
-type AuthServiceInterface interface {
+type AuthService interface {
 	RegisterUser(req *requests.RegisterUser) error
 	LoginUser(req *requests.LoginUser, ctx *fiber.Ctx) (*responses.LoginResponse, error)
 	LogoutUser(ctx *fiber.Ctx) error

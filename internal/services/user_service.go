@@ -6,16 +6,16 @@ import (
 
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/user"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 )
 
 type userService struct {
-	UserRepository domains.UserRepositoryInterface
+	UserRepository user.UserRepository
 	logging        logging.Logger
 }
 
-func NewUserService(userRepository domains.UserRepositoryInterface, logger logging.Logger) domains.UserServiceInterface {
+func NewUserService(userRepository user.UserRepository, logger logging.Logger) user.UserService {
 	return &userService{
 		UserRepository: userRepository,
 		logging:        logger,

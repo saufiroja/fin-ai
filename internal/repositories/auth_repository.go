@@ -3,7 +3,7 @@ package repositories
 import (
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/user"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/databases"
 )
@@ -12,7 +12,7 @@ type userRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewUserRepository(db databases.PostgresManager) domains.UserRepositoryInterface {
+func NewUserRepository(db databases.PostgresManager) user.UserRepository {
 	return &userRepository{
 		DB: db,
 	}

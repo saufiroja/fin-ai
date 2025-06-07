@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/model_registry"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/databases"
 )
@@ -10,7 +10,7 @@ type modelRegistryRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewModelRegistryRepository(db databases.PostgresManager) domains.ModelRegistryRepositoryInterface {
+func NewModelRegistryRepository(db databases.PostgresManager) model_registry.ModelRegistryRepository {
 	return &modelRegistryRepository{
 		DB: db,
 	}

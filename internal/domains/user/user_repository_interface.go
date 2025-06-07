@@ -1,4 +1,4 @@
-package domains
+package user
 
 import (
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
@@ -6,7 +6,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/models"
 )
 
-type UserRepositoryInterface interface {
+type UserRepository interface {
 	InsertUser(req *models.User) error
 	FindUserByEmail(email string) (*models.User, error)
 	FindUserById(userId string) (*responses.FindUserById, error)

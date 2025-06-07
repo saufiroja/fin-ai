@@ -1,4 +1,4 @@
-package domains
+package chat
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/models"
 )
 
-type ChatServiceInterface interface {
+type ChatService interface {
 	CreateChatSession(userId string) (*models.ChatSession, error)
 	FindAllChatSessions(userId string) ([]*models.ChatSession, error)
 	RenameChatSession(chatSession *models.ChatSessionUpdateRequest) error

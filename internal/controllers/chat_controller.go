@@ -1,21 +1,21 @@
-package chat
+package controllers
 
 import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/chat"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/internal/utils"
 )
 
 type chatController struct {
-	chatService domains.ChatServiceInterface
+	chatService chat.ChatService
 	validator   utils.Validator
 }
 
-func NewChatController(chatService domains.ChatServiceInterface, validator utils.Validator) ChatController {
+func NewChatController(chatService chat.ChatService, validator utils.Validator) chat.ChatController {
 	return &chatController{
 		chatService: chatService,
 		validator:   validator,

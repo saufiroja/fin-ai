@@ -11,27 +11,29 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/openai/openai-go"
 	"github.com/saufiroja/fin-ai/internal/constants"
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/chat"
+	"github.com/saufiroja/fin-ai/internal/domains/log_message"
+	"github.com/saufiroja/fin-ai/internal/domains/model_registry"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/llm"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 )
 
 type chatService struct {
-	chatRepository    domains.ChatRepositoryInterface
+	chatRepository    chat.ChatRepository
 	logging           logging.Logger
 	llmClient         llm.OpenAI
-	modelRegistry     domains.ModelRegistryRepositoryInterface
-	logMessageService domains.LogMessageServiceInterface
+	modelRegistry     model_registry.ModelRegistryRepository
+	logMessageService log_message.LogMessageService
 }
 
 func NewChatService(
-	chatRepository domains.ChatRepositoryInterface,
+	chatRepository chat.ChatRepository,
 	logging logging.Logger,
 	llmClient llm.OpenAI,
-	modelRegistry domains.ModelRegistryRepositoryInterface,
-	logMessageService domains.LogMessageServiceInterface,
-) domains.ChatServiceInterface {
+	modelRegistry model_registry.ModelRegistryRepository,
+	logMessageService log_message.LogMessageService,
+) chat.ChatService {
 	return &chatService{
 		chatRepository:    chatRepository,
 		logging:           logging,

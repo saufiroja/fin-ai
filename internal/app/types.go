@@ -3,10 +3,11 @@ package app
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/saufiroja/fin-ai/config"
-	"github.com/saufiroja/fin-ai/internal/controllers/auth"
-	"github.com/saufiroja/fin-ai/internal/controllers/chat"
-	"github.com/saufiroja/fin-ai/internal/controllers/user"
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/auth"
+	"github.com/saufiroja/fin-ai/internal/domains/chat"
+	"github.com/saufiroja/fin-ai/internal/domains/log_message"
+	"github.com/saufiroja/fin-ai/internal/domains/model_registry"
+	"github.com/saufiroja/fin-ai/internal/domains/user"
 	"github.com/saufiroja/fin-ai/internal/utils"
 	"github.com/saufiroja/fin-ai/pkg/databases"
 	"github.com/saufiroja/fin-ai/pkg/llm"
@@ -28,17 +29,17 @@ type Dependencies struct {
 }
 
 type Repositories struct {
-	User          domains.UserRepositoryInterface
-	Chat          domains.ChatRepositoryInterface
-	ModelRegistry domains.ModelRegistryRepositoryInterface
-	LogMessage    domains.LogMessageRepositoryInterface
+	User          user.UserRepository
+	Chat          chat.ChatRepository
+	ModelRegistry model_registry.ModelRegistryRepository
+	LogMessage    log_message.LogMessageRepository
 }
 
 type Services struct {
-	Auth       domains.AuthServiceInterface
-	User       domains.UserServiceInterface
-	Chat       domains.ChatServiceInterface
-	LogMessage domains.LogMessageServiceInterface
+	Auth       auth.AuthService
+	User       user.UserService
+	Chat       chat.ChatService
+	LogMessage log_message.LogMessageService
 }
 
 type Controllers struct {

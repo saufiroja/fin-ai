@@ -1,17 +1,20 @@
 package services
 
 import (
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/log_message"
 	"github.com/saufiroja/fin-ai/internal/models"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 )
 
 type logMessageService struct {
-	logMessageRepository domains.LogMessageRepositoryInterface
+	logMessageRepository log_message.LogMessageRepository
 	logging              logging.Logger
 }
 
-func NewLogMessageService(logMessageRepository domains.LogMessageRepositoryInterface, logging logging.Logger) domains.LogMessageServiceInterface {
+func NewLogMessageService(
+	logMessageRepository log_message.LogMessageRepository,
+	logging logging.Logger,
+) log_message.LogMessageService {
 	return &logMessageService{
 		logMessageRepository: logMessageRepository,
 		logging:              logging,

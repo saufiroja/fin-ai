@@ -4,9 +4,7 @@ import (
 	"fmt"
 
 	"github.com/saufiroja/fin-ai/config"
-	"github.com/saufiroja/fin-ai/internal/controllers/auth"
-	"github.com/saufiroja/fin-ai/internal/controllers/chat"
-	"github.com/saufiroja/fin-ai/internal/controllers/user"
+	"github.com/saufiroja/fin-ai/internal/controllers"
 	"github.com/saufiroja/fin-ai/internal/middleware"
 	"github.com/saufiroja/fin-ai/internal/repositories"
 	"github.com/saufiroja/fin-ai/internal/services"
@@ -102,9 +100,9 @@ func (c *Container) initializeServices() *Services {
 
 func (c *Container) initializeControllers() *Controllers {
 	return &Controllers{
-		Auth: auth.NewAuthController(c.Services.Auth, c.Dependencies.Validator),
-		User: user.NewUserController(c.Services.User),
-		Chat: chat.NewChatController(c.Services.Chat, c.Dependencies.Validator),
+		Auth: controllers.NewAuthController(c.Services.Auth, c.Dependencies.Validator),
+		User: controllers.NewUserController(c.Services.User),
+		Chat: controllers.NewChatController(c.Services.Chat, c.Dependencies.Validator),
 	}
 }
 

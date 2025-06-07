@@ -10,7 +10,8 @@ import (
 	"github.com/saufiroja/fin-ai/config"
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/auth"
+	"github.com/saufiroja/fin-ai/internal/domains/user"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/internal/utils"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
@@ -18,18 +19,18 @@ import (
 )
 
 type authService struct {
-	repoUser       domains.UserRepositoryInterface
+	repoUser       user.UserRepository
 	logging        logging.Logger
 	tokenGenerator utils.TokenGenerator
 	conf           *config.AppConfig
 }
 
 func NewAuthService(
-	repo domains.UserRepositoryInterface,
+	repo user.UserRepository,
 	logging logging.Logger,
 	tokenGenerator utils.TokenGenerator,
 	conf *config.AppConfig,
-) domains.AuthServiceInterface {
+) auth.AuthService {
 	return &authService{
 		repoUser:       repo,
 		logging:        logging,

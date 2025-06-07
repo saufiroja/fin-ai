@@ -1,4 +1,4 @@
-package auth
+package controllers
 
 import (
 	"fmt"
@@ -6,16 +6,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/auth"
 	"github.com/saufiroja/fin-ai/internal/utils"
 )
 
 type authController struct {
-	authService domains.AuthServiceInterface
+	authService auth.AuthService
 	validator   utils.Validator
 }
 
-func NewAuthController(authService domains.AuthServiceInterface, validator utils.Validator) AuthController {
+func NewAuthController(authService auth.AuthService, validator utils.Validator) auth.AuthController {
 	return &authController{
 		authService: authService,
 		validator:   validator,

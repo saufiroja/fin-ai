@@ -1,7 +1,7 @@
-package domains
+package log_message
 
 import "github.com/saufiroja/fin-ai/internal/models"
 
-type LogMessageRepositoryInterface interface {
+type LogMessageService interface {
 	InsertLogMessage(logMessage *models.LogMessageModel) error
 }

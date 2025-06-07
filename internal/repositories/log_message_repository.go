@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"github.com/saufiroja/fin-ai/internal/domains"
+	"github.com/saufiroja/fin-ai/internal/domains/log_message"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/databases"
 )
@@ -10,7 +10,7 @@ type logMessageRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewLogMessageRepository(db databases.PostgresManager) domains.LogMessageRepositoryInterface {
+func NewLogMessageRepository(db databases.PostgresManager) log_message.LogMessageRepository {
 	return &logMessageRepository{
 		DB: db,
 	}
