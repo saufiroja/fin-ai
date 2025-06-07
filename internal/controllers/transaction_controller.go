@@ -20,7 +20,7 @@ func NewTransactionController(transactionService transaction.TransactionManager)
 func (t *transactionController) GetAllTransactions(ctx *fiber.Ctx) error {
 	transactionQuery := &requests.GetAllTransactionsQuery{
 		Limit:    10, // Default limit
-		Offset:   0,  // Default offset
+		Offset:   1,  // Default offset
 		Category: "",
 		Search:   "",
 	}
@@ -36,7 +36,12 @@ func (t *transactionController) GetAllTransactions(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(responses.Response{
 		Status:  fiber.StatusOK,
 		Message: "Transactions retrieved successfully",
-		Data:    transactions,
+		Data:    transactions.Transactions,
+		Pagination: &responses.Pagination{
+			Total:       transactions.Total,
+			CurrentPage: transactions.CurrentPage,
+			TotalPages:  transactions.TotalPages,
+		},
 	})
 }
 
@@ -65,7 +70,6 @@ func (t *transactionController) CreateTransaction(ctx *fiber.Ctx) error {
 	})
 }
 
-// DeleteTransaction implements transaction.TransactionController.
 func (t *transactionController) DeleteTransaction(ctx *fiber.Ctx) error {
 	transactionId := ctx.Params("transaction_id")
 	if transactionId == "" {
@@ -88,7 +92,6 @@ func (t *transactionController) DeleteTransaction(ctx *fiber.Ctx) error {
 	})
 }
 
-// GetDetailedTransaction implements transaction.TransactionController.
 func (t *transactionController) GetDetailedTransaction(ctx *fiber.Ctx) error {
 	transactionId := ctx.Params("transaction_id")
 	if transactionId == "" {
@@ -113,12 +116,10 @@ func (t *transactionController) GetDetailedTransaction(ctx *fiber.Ctx) error {
 	})
 }
 
-// GetTransactionsStats implements transaction.TransactionController.
 func (t *transactionController) GetTransactionsStats(ctx *fiber.Ctx) error {
 	panic("unimplemented")
 }
 
-// UpdateTransaction implements transaction.TransactionController.
 func (t *transactionController) UpdateTransaction(ctx *fiber.Ctx) error {
 	transactionId := ctx.Params("transaction_id")
 	if transactionId == "" {

@@ -75,11 +75,11 @@ func (r *Routes) setupTransactionRoutes() {
 		r.container.Controllers.Transaction.CreateTransaction)
 
 	transactionGroup.Get("/",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.GetAllTransactions)
 
 	transactionGroup.Get("/:transaction_id",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.GetDetailedTransaction)
 
 	transactionGroup.Put("/:transaction_id",
@@ -87,11 +87,11 @@ func (r *Routes) setupTransactionRoutes() {
 		r.container.Controllers.Transaction.UpdateTransaction)
 
 	transactionGroup.Delete("/:transaction_id",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.DeleteTransaction)
 
 	transactionGroup.Get("/stats",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.GetTransactionsStats)
 }
 
@@ -100,16 +100,16 @@ func (r *Routes) setupCategoryRoutes() {
 	categoryGroup := globalApi.Group("/categories")
 
 	categoryGroup.Post("/",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Category.CreateCategory)
 	categoryGroup.Get("/",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Category.GetAllCategories)
 	categoryGroup.Put("/:category_id",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Category.UpdateCategoryById)
 	categoryGroup.Delete("/:category_id",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Category.DeleteCategoryById)
 
 }
