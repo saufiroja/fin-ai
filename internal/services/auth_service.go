@@ -19,18 +19,18 @@ import (
 )
 
 type authService struct {
-	repoUser       user.UserRepository
+	repoUser       user.UserStorer
 	logging        logging.Logger
 	tokenGenerator utils.TokenGenerator
 	conf           *config.AppConfig
 }
 
 func NewAuthService(
-	repo user.UserRepository,
+	repo user.UserStorer,
 	logging logging.Logger,
 	tokenGenerator utils.TokenGenerator,
 	conf *config.AppConfig,
-) auth.AuthService {
+) auth.AuthManager {
 	return &authService{
 		repoUser:       repo,
 		logging:        logging,

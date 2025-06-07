@@ -6,7 +6,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/models"
 )
 
-type ChatService interface {
+type ChatManager interface {
 	CreateChatSession(userId string) (*models.ChatSession, error)
 	FindAllChatSessions(userId string) ([]*models.ChatSession, error)
 	RenameChatSession(chatSession *models.ChatSessionUpdateRequest) error

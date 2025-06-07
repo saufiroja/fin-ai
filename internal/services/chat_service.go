@@ -20,20 +20,20 @@ import (
 )
 
 type chatService struct {
-	chatRepository    chat.ChatRepository
+	chatRepository    chat.ChatStorer
 	logging           logging.Logger
 	llmClient         llm.OpenAI
-	modelRegistry     model_registry.ModelRegistryRepository
-	logMessageService log_message.LogMessageService
+	modelRegistry     model_registry.ModelRegistryStorer
+	logMessageService log_message.LogMessageManager
 }
 
 func NewChatService(
-	chatRepository chat.ChatRepository,
+	chatRepository chat.ChatStorer,
 	logging logging.Logger,
 	llmClient llm.OpenAI,
-	modelRegistry model_registry.ModelRegistryRepository,
-	logMessageService log_message.LogMessageService,
-) chat.ChatService {
+	modelRegistry model_registry.ModelRegistryStorer,
+	logMessageService log_message.LogMessageManager,
+) chat.ChatManager {
 	return &chatService{
 		chatRepository:    chatRepository,
 		logging:           logging,

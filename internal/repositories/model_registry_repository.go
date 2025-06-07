@@ -10,7 +10,7 @@ type modelRegistryRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewModelRegistryRepository(db databases.PostgresManager) model_registry.ModelRegistryRepository {
+func NewModelRegistryRepository(db databases.PostgresManager) model_registry.ModelRegistryStorer {
 	return &modelRegistryRepository{
 		DB: db,
 	}

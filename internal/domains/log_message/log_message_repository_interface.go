@@ -2,6 +2,6 @@ package log_message
 
 import "github.com/saufiroja/fin-ai/internal/models"
 
-type LogMessageRepository interface {
+type LogMessageStorer interface {
 	InsertLogMessage(logMessage *models.LogMessageModel) error
 }

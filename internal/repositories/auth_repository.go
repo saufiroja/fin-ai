@@ -12,7 +12,7 @@ type userRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewUserRepository(db databases.PostgresManager) user.UserRepository {
+func NewUserRepository(db databases.PostgresManager) user.UserStorer {
 	return &userRepository{
 		DB: db,
 	}

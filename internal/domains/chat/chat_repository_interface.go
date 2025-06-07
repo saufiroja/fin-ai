@@ -2,7 +2,7 @@ package chat
 
 import "github.com/saufiroja/fin-ai/internal/models"
 
-type ChatRepository interface {
+type ChatStorer interface {
 	InsertChatSession(chatSession *models.ChatSession) error
 	FindAllChatSessions(userId string) ([]*models.ChatSession, error)
 	RenameChatSession(chatSession *models.ChatSession) error

@@ -6,7 +6,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/models"
 )
 
-type UserRepository interface {
+type UserStorer interface {
 	InsertUser(req *models.User) error
 	FindUserByEmail(email string) (*models.User, error)
 	FindUserById(userId string) (*responses.FindUserById, error)

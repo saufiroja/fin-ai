@@ -10,7 +10,7 @@ type chatRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewChatRepository(db databases.PostgresManager) chat.ChatRepository {
+func NewChatRepository(db databases.PostgresManager) chat.ChatStorer {
 	return &chatRepository{
 		DB: db,
 	}

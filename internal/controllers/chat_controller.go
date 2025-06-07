@@ -11,11 +11,11 @@ import (
 )
 
 type chatController struct {
-	chatService chat.ChatService
+	chatService chat.ChatManager
 	validator   utils.Validator
 }
 
-func NewChatController(chatService chat.ChatService, validator utils.Validator) chat.ChatController {
+func NewChatController(chatService chat.ChatManager, validator utils.Validator) chat.ChatController {
 	return &chatController{
 		chatService: chatService,
 		validator:   validator,

@@ -7,14 +7,14 @@ import (
 )
 
 type logMessageService struct {
-	logMessageRepository log_message.LogMessageRepository
+	logMessageRepository log_message.LogMessageStorer
 	logging              logging.Logger
 }
 
 func NewLogMessageService(
-	logMessageRepository log_message.LogMessageRepository,
+	logMessageRepository log_message.LogMessageStorer,
 	logging logging.Logger,
-) log_message.LogMessageService {
+) log_message.LogMessageManager {
 	return &logMessageService{
 		logMessageRepository: logMessageRepository,
 		logging:              logging,

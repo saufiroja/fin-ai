@@ -29,17 +29,17 @@ type Dependencies struct {
 }
 
 type Repositories struct {
-	User          user.UserRepository
-	Chat          chat.ChatRepository
-	ModelRegistry model_registry.ModelRegistryRepository
-	LogMessage    log_message.LogMessageRepository
+	User          user.UserStorer
+	Chat          chat.ChatStorer
+	ModelRegistry model_registry.ModelRegistryStorer
+	LogMessage    log_message.LogMessageStorer
 }
 
 type Services struct {
-	Auth       auth.AuthService
-	User       user.UserService
-	Chat       chat.ChatService
-	LogMessage log_message.LogMessageService
+	Auth       auth.AuthManager
+	User       user.UserManager
+	Chat       chat.ChatManager
+	LogMessage log_message.LogMessageManager
 }
 
 type Controllers struct {

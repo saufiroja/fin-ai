@@ -10,7 +10,7 @@ type logMessageRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewLogMessageRepository(db databases.PostgresManager) log_message.LogMessageRepository {
+func NewLogMessageRepository(db databases.PostgresManager) log_message.LogMessageStorer {
 	return &logMessageRepository{
 		DB: db,
 	}

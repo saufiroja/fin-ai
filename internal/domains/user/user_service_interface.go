@@ -5,7 +5,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 )
 
-type UserService interface {
+type UserManager interface {
 	UpdateUserById(userId string, req *requests.UpdateUserRequest) error
 	DeleteUserById(userId string) error
 	GetMe(userId string) (*responses.FindUserById, error)

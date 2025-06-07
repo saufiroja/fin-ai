@@ -11,11 +11,11 @@ import (
 )
 
 type authController struct {
-	authService auth.AuthService
+	authService auth.AuthManager
 	validator   utils.Validator
 }
 
-func NewAuthController(authService auth.AuthService, validator utils.Validator) auth.AuthController {
+func NewAuthController(authService auth.AuthManager, validator utils.Validator) auth.AuthController {
 	return &authController{
 		authService: authService,
 		validator:   validator,
