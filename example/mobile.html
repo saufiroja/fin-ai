@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Financial Tracker AI - UI Mockup</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .phone-container {
+        width: 375px;
+        height: 812px;
+        background: #000;
+        border-radius: 40px;
+        padding: 8px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+
+      .screen {
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        border-radius: 32px;
+        overflow: hidden;
+        position: relative;
+        display: none;
+      }
+
+      .screen.active {
+        display: block;
+      }
+
+      .status-bar {
+        height: 44px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .header p {
+        opacity: 0.9;
+        font-size: 14px;
+      }
+
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      .nav-buttons {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        z-index: 1000;
+      }
+
+      .nav-btn {
+        padding: 10px 15px;
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      }
+
+      .nav-btn:hover {
+        background: rgba(102, 126, 234, 1);
+        transform: translateY(-2px);
+      }
+
+      .nav-btn.active {
+        background: #764ba2;
+      }
+
+      /* Login Screen Styles */
+      .login-form {
+        padding: 40px 20px;
+        text-align: center;
+      }
+
+      .logo {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 20px;
+        margin: 0 auto 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: white;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .btn-primary {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+
+      /* Dashboard Styles */
+      .balance-card {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 20px;
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .balance-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+      }
+
+      .balance-amount {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .balance-label {
+        opacity: 0.9;
+        font-size: 14px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .income {
+        color: #10b981;
+      }
+      .expense {
+        color: #ef4444;
+      }
+
+      .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .see-all {
+        font-size: 14px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .transaction-list {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .transaction-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .transaction-item:last-child {
+        border-bottom: none;
+      }
+
+      .transaction-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 18px;
+      }
+
+      .transaction-details {
+        flex: 1;
+      }
+
+      .transaction-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 2px;
+      }
+
+      .transaction-subtitle {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .transaction-amount {
+        font-weight: 600;
+        font-size: 16px;
+      }
+
+      /* Chat Screen Styles */
+      .chat-header {
+        background: white;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e1e5e9;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .ai-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+      }
+
+      .chat-info h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .chat-info p {
+        font-size: 12px;
+        color: #10b981;
+      }
+
+      .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .message {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .message.user {
+        flex-direction: row-reverse;
+      }
+
+      .message-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .user .message-avatar {
+        background: #667eea;
+        color: white;
+      }
+
+      .ai .message-avatar {
+        background: #f1f5f9;
+        color: #667eea;
+      }
+
+      .message-bubble {
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .user .message-bubble {
+        background: #667eea;
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+
+      .ai .message-bubble {
+        background: #f1f5f9;
+        color: #333;
+        border-bottom-left-radius: 4px;
+      }
+
+      .chat-input {
+        background: white;
+        padding: 15px 20px;
+        border-top: 1px solid #e1e5e9;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #e1e5e9;
+        border-radius: 20px;
+        font-size: 14px;
+      }
+
+      .send-btn {
+        width: 40px;
+        height: 40px;
+        background: #667eea;
+        border: none;
+        border-radius: 20px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* OCR Screen Styles */
+      .upload-area {
+        border: 2px dashed #667eea;
+        border-radius: 16px;
+        padding: 40px 20px;
+        text-align: center;
+        margin-bottom: 25px;
+        background: rgba(102, 126, 234, 0.05);
+      }
+
+      .upload-icon {
+        width: 60px;
+        height: 60px;
+        background: #667eea;
+        border-radius: 30px;
+        margin: 0 auto 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+      }
+
+      .ocr-result {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      .result-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .result-item:last-child {
+        border-bottom: none;
+      }
+
+      /* Analytics Screen Styles */
+      .insight-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .insight-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+      }
+
+      .insight-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .chart-placeholder {
+        height: 200px;
+        background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 14px;
+        margin: 15px 0;
+      }
+
+      .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: white;
+        border-top: 1px solid #e1e5e9;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 20px;
+      }
+
+      .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        color: #64748b;
+        font-size: 12px;
+        cursor: pointer;
+        transition: color 0.3s ease;
+      }
+
+      .nav-item.active {
+        color: #667eea;
+      }
+
+      .nav-item-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 400px) {
+        .phone-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          border-radius: 0;
+          padding: 0;
+        }
+
+        .screen {
+          border-radius: 0;
+        }
+      }
+
+      .fab {
+        position: absolute;
+        bottom: 100px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 28px;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone-container">
+      <!-- Login Screen -->
+      <div class="screen active" id="login">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>100%</span>
+        </div>
+        <div class="login-form">
+          <div class="logo">💰</div>
+          <h1 style="color: #333; margin-bottom: 10px">Financial Tracker AI</h1>
+          <p style="color: #666; margin-bottom: 40px">
+            Smart financial management with AI insights
+          </p>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" placeholder="Enter your email" />
+          </div>
+
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" placeholder="Enter your password" />
+          </div>
+
+          <button class="btn-primary">Sign In</button>
+
+          <p style="text-align: center; margin-top: 30px; color: #666">
+            Don't have an account?
+            <a
+              href="#"
+              style="color: #667eea; text-decoration: none; font-weight: 600"
+              >Sign Up</a
+            >
+          </p>
+        </div>
+      </div>
+
+      <!-- Dashboard Screen -->
+      <div class="screen" id="dashboard">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>100%</span>
+        </div>
+        <div class="header">
+          <h1>Dashboard</h1>
+          <p>Good morning, Sarah!</p>
+        </div>
+        <div class="content">
+          <div class="balance-card">
+            <div class="balance-amount">$4,247.50</div>
+            <div class="balance-label">Total Balance</div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value income">+$2,840</div>
+              <div class="stat-label">This Month Income</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value expense">-$1,685</div>
+              <div class="stat-label">This Month Expenses</div>
+            </div>
+          </div>
+
+          <div class="section-title">
+            Recent Transactions
+            <a href="#" class="see-all">See All</a>
+          </div>
+
+          <div class="transaction-list">
+            <div class="transaction-item">
+              <div
+                class="transaction-icon"
+                style="background: #fef3c7; color: #f59e0b"
+              >
+                🍕
+              </div>
+              <div class="transaction-details">
+                <div class="transaction-title">Food & Dining</div>
+                <div class="transaction-subtitle">Pizza Palace • Today</div>
+              </div>
+              <div class="transaction-amount expense">-$24.50</div>
+            </div>
+            <div class="transaction-item">
+              <div
+                class="transaction-icon"
+                style="background: #dcfce7; color: #22c55e"
+              >
+                💼
+              </div>
+              <div class="transaction-details">
+                <div class="transaction-title">Salary</div>
+                <div class="transaction-subtitle">
+                  Monthly Salary • Yesterday
+                </div>
+              </div>
+              <div class="transaction-amount income">+$3,200</div>
+            </div>
+            <div class="transaction-item">
+              <div
+                class="transaction-icon"
+                style="background: #e0e7ff; color: #6366f1"
+              >
+                ⛽
+              </div>
+              <div class="transaction-details">
+                <div class="transaction-title">Transportation</div>
+                <div class="transaction-subtitle">Gas Station • 2 days ago</div>
+              </div>
+              <div class="transaction-amount expense">-$45.00</div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active">
+            <div class="nav-item-icon">🏠</div>
+            <span>Home</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">💳</div>
+            <span>Transactions</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">🤖</div>
+            <span>AI Chat</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">📊</div>
+            <span>Analytics</span>
+          </div>
+        </div>
+        <button class="fab">+</button>
+      </div>
+
+      <!-- Chat Screen -->
+      <div class="screen" id="chat">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>100%</span>
+        </div>
+        <div class="chat-header">
+          <div class="ai-avatar">AI</div>
+          <div class="chat-info">
+            <h3>Financial Assistant</h3>
+            <p>● Online</p>
+          </div>
+        </div>
+        <div class="chat-messages">
+          <div class="message ai">
+            <div class="message-avatar">AI</div>
+            <div class="message-bubble">
+              Hi Sarah! I've analyzed your spending this week. You're doing
+              great with your food budget - down 15% from last month! 🎉
+            </div>
+          </div>
+          <div class="message user">
+            <div class="message-avatar">S</div>
+            <div class="message-bubble">
+              That's great! Can you show me where I can save more money?
+            </div>
+          </div>
+          <div class="message ai">
+            <div class="message-avatar">AI</div>
+            <div class="message-bubble">
+              Based on your patterns, I noticed you spend $120/month on coffee
+              shops. A $30 coffee maker could save you $90/month! Also, your
+              streaming subscriptions total $45 - you might want to review which
+              ones you actually use.
+            </div>
+          </div>
+          <div class="message user">
+            <div class="message-avatar">S</div>
+            <div class="message-bubble">
+              Good insights! Can you set up a budget for next month?
+            </div>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input type="text" placeholder="Ask about your finances..." />
+          <button class="send-btn">→</button>
+        </div>
+      </div>
+
+      <!-- OCR Screen -->
+      <div class="screen" id="ocr">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>100%</span>
+        </div>
+        <div class="header">
+          <h1>Scan Receipt</h1>
+          <p>AI-powered receipt processing</p>
+        </div>
+        <div class="content">
+          <div class="upload-area">
+            <div class="upload-icon">📷</div>
+            <h3 style="color: #333; margin-bottom: 10px">Take a Photo</h3>
+            <p style="color: #666; font-size: 14px">
+              Point your camera at the receipt and we'll extract the details
+              automatically
+            </p>
+            <button
+              class="btn-primary"
+              style="margin-top: 20px; width: auto; padding: 12px 24px"
+            >
+              Open Camera
+            </button>
+          </div>
+
+          <div class="section-title">Recent Scans</div>
+
+          <div class="ocr-result">
+            <div class="result-item">
+              <span style="font-weight: 600">Merchant</span>
+              <span>Whole Foods Market</span>
+            </div>
+            <div class="result-item">
+              <span style="font-weight: 600">Date</span>
+              <span>Dec 15, 2024</span>
+            </div>
+            <div class="result-item">
+              <span style="font-weight: 600">Total</span>
+              <span style="font-weight: 600; color: #ef4444">$67.89</span>
+            </div>
+            <div class="result-item">
+              <span style="font-weight: 600">Category</span>
+              <span
+                style="
+                  background: #dcfce7;
+                  color: #22c55e;
+                  padding: 4px 8px;
+                  border-radius: 12px;
+                  font-size: 12px;
+                "
+                >Groceries</span
+              >
+            </div>
+          </div>
+
+          <button class="btn-primary">Save Transaction</button>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item">
+            <div class="nav-item-icon">🏠</div>
+            <span>Home</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">💳</div>
+            <span>Transactions</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">🤖</div>
+            <span>AI Chat</span>
+          </div>
+          <div class="nav-item active">
+            <div class="nav-item-icon">📸</div>
+            <span>Scan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Screen -->
+      <div class="screen" id="analytics">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>100%</span>
+        </div>
+        <div class="header">
+          <h1>AI Insights</h1>
+          <p>Personalized financial analysis</p>
+        </div>
+        <div class="content">
+          <div class="insight-card">
+            <div class="insight-header">
+              <div
+                class="insight-icon"
+                style="background: #dcfce7; color: #22c55e"
+              >
+                📈
+              </div>
+              <div>
+                <h3 style="color: #333; font-size: 16px">Spending Trend</h3>
+                <p style="color: #666; font-size: 12px">
+                  Last 30 days analysis
+                </p>
+              </div>
+            </div>
+            <div class="chart-placeholder">📊 Spending Pattern Chart</div>
+            <p style="color: #333; font-size: 14px; line-height: 1.5">
+              You've reduced your dining expenses by 20% this month. Keep it up!
+              Consider setting aside the savings for your emergency fund.
+            </p>
+          </div>
+
+          <div class="insight-card">
+            <div class="insight-header">
+              <div
+                class="insight-icon"
+                style="background: #fef3c7; color: #f59e0b"
+              >
+                ⚠️
+              </div>
+              <div>
+                <h3 style="color: #333; font-size: 16px">Budget Alert</h3>
+                <p style="color: #666; font-size: 12px">
+                  Entertainment category
+                </p>
+              </div>
+            </div>
+            <p style="color: #333; font-size: 14px; line-height: 1.5">
+              You've used 85% of your entertainment budget. Consider limiting
+              streaming subscriptions or movie outings this month.
+            </p>
+          </div>
+
+          <div class="insight-card">
+            <div class="insight-header">
+              <div
+                class="insight-icon"
+                style="background: #e0e7ff; color: #6366f1"
+              >
+                💡
+              </div>
+              <div>
+                <h3 style="color: #333; font-size: 16px">Smart Suggestion</h3>
+                <p style="color: #666; font-size: 12px">Savings opportunity</p>
+              </div>
+            </div>
+            <p style="color: #333; font-size: 14px; line-height: 1.5">
+              Based on your coffee shop visits, you could save $75/month by
+              brewing at home 3 days a week. That's $900 annually!
+            </p>
+          </div>
+
+          <div class="insight-card">
+            <div class="insight-header">
+              <div
+                class="insight-icon"
+                style="background: #fce7f3; color: #ec4899"
+              >
+                🎯
+              </div>
+              <div>
+                <h3 style="color: #333; font-size: 16px">Goal Progress</h3>
+                <p style="color: #666; font-size: 12px">
+                  Emergency fund target
+                </p>
+              </div>
+            </div>
+            <div
+              style="
+                background: #f1f5f9;
+                border-radius: 12px;
+                padding: 15px;
+                margin: 15px 0;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  margin-bottom: 8px;
+                "
+              >
+                <span style="font-size: 14px; color: #333"
+                  >$2,247 / $5,000</span
+                >
+                <span style="font-size: 14px; color: #667eea; font-weight: 600"
+                  >45%</span
+                >
+              </div>
+              <div style="background: #e2e8f0; height: 8px; border-radius: 4px">
+                <div
+                  style="
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    width: 45%;
+                    height: 100%;
+                    border-radius: 4px;
+                  "
+                ></div>
+              </div>
+            </div>
+            <p style="color: #333; font-size: 14px; line-height: 1.5">
+              Great progress! At your current saving rate, you'll reach your
+              goal in 8 months.
+            </p>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item">
+            <div class="nav-item-icon">🏠</div>
+            <span>Home</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">💳</div>
+            <span>Transactions</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">🤖</div>
+            <span>AI Chat</span>
+          </div>
+          <div class="nav-item active">
+            <div class="nav-item-icon">📊</div>
+            <span>Analytics</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation buttons for mockup -->
+    <div class="nav-buttons">
+      <button class="nav-btn active" onclick="showScreen('login')">
+        Login
+      </button>
+      <button class="nav-btn" onclick="showScreen('dashboard')">
+        Dashboard
+      </button>
+      <button class="nav-btn" onclick="showScreen('chat')">AI Chat</button>
+      <button class="nav-btn" onclick="showScreen('ocr')">OCR Scan</button>
+      <button class="nav-btn" onclick="showScreen('analytics')">
+        Analytics
+      </button>
+    </div>
+
+    <script>
+      function showScreen(screenId) {
+        // Hide all screens
+        const screens = document.querySelectorAll('.screen');
+        screens.forEach((screen) => screen.classList.remove('active'));
+
+        // Show selected screen
+        document.getElementById(screenId).classList.add('active');
+
+        // Update nav button states
+        const buttons = document.querySelectorAll('.nav-btn');
+        buttons.forEach((btn) => btn.classList.remove('active'));
+        event.target.classList.add('active');
+      }
+
+      // Add some interactive elements
+      document.addEventListener('DOMContentLoaded', function () {
+        // Simulate typing in chat
+        const chatInput = document.querySelector('.chat-input input');
+        if (chatInput) {
+          chatInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+              const message = this.value.trim();
+              if (message) {
+                addChatMessage(message, 'user');
+                this.value = '';
+                setTimeout(() => {
+                  addChatMessage(
+                    "I understand you're asking about " +
+                      message +
+                      '. Let me analyze your financial data and provide personalized insights.',
+                    'ai',
+                  );
+                }, 1000);
+              }
+            }
+          });
+        }
+
+        // Add click handlers for bottom navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach((item) => {
+          item.addEventListener('click', function () {
+            const text = this.querySelector('span').textContent.toLowerCase();
+            let screenId = 'dashboard';
+
+            switch (text) {
+              case 'home':
+                screenId = 'dashboard';
+                break;
+              case 'transactions':
+                screenId = 'dashboard';
+                break;
+              case 'ai chat':
+                screenId = 'chat';
+                break;
+              case 'analytics':
+                screenId = 'analytics';
+                break;
+              case 'scan':
+                screenId = 'ocr';
+                break;
+            }
+
+            showScreenFromNav(screenId);
+
+            // Update active state
+            navItems.forEach((nav) => nav.classList.remove('active'));
+            this.classList.add('active');
+          });
+        });
+
+        // FAB click handler
+        const fab = document.querySelector('.fab');
+        if (fab) {
+          fab.addEventListener('click', function () {
+            alert('Add Transaction feature would open here');
+          });
+        }
+
+        // Login button handler
+        const loginBtn = document.querySelector('.btn-primary');
+        if (loginBtn && loginBtn.textContent === 'Sign In') {
+          loginBtn.addEventListener('click', function () {
+            showScreenFromNav('dashboard');
+          });
+        }
+      });
+
+      function showScreenFromNav(screenId) {
+        const screens = document.querySelectorAll('.screen');
+        screens.forEach((screen) => screen.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+      }
+
+      function addChatMessage(message, sender) {
+        const chatMessages = document.querySelector('.chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        avatar.textContent = sender === 'user' ? 'S' : 'AI';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.textContent = message;
+
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        chatMessages.appendChild(messageDiv);
+
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      // Add some animation effects
+      document.addEventListener('DOMContentLoaded', function () {
+        // Animate balance card on dashboard load
+        const balanceCard = document.querySelector('.balance-card');
+        if (balanceCard) {
+          balanceCard.style.transform = 'translateY(20px)';
+          balanceCard.style.opacity = '0';
+
+          setTimeout(() => {
+            balanceCard.style.transition = 'all 0.6s ease';
+            balanceCard.style.transform = 'translateY(0)';
+            balanceCard.style.opacity = '1';
+          }, 100);
+        }
+
+        // Animate transaction items
+        const transactionItems = document.querySelectorAll('.transaction-item');
+        transactionItems.forEach((item, index) => {
+          item.style.transform = 'translateX(-20px)';
+          item.style.opacity = '0';
+
+          setTimeout(() => {
+            item.style.transition = 'all 0.4s ease';
+            item.style.transform = 'translateX(0)';
+            item.style.opacity = '1';
+          }, 200 + index * 100);
+        });
+
+        // Animate insight cards
+        const insightCards = document.querySelectorAll('.insight-card');
+        insightCards.forEach((card, index) => {
+          card.style.transform = 'translateY(30px)';
+          card.style.opacity = '0';
+
+          setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.transform = 'translateY(0)';
+            card.style.opacity = '1';
+          }, 150 + index * 150);
+        });
+      });
+
+      // Add hover effects for better interactivity
+      const style = document.createElement('style');
+      style.textContent = `
+            .transaction-item:hover {
+                background: #f8fafc;
+                transform: translateX(5px);
+                transition: all 0.2s ease;
+            }
+            
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                transition: all 0.3s ease;
+            }
+            
+            .insight-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                transition: all 0.3s ease;
+            }
+            
+            .nav-item:hover {
+                color: #667eea;
+                transform: translateY(-1px);
+                transition: all 0.2s ease;
+            }
+            
+            .fab:hover {
+                transform: scale(1.05);
+                box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+                transition: all 0.3s ease;
+            }
+            
+            .btn-primary:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+                transition: all 0.3s ease;
+            }
+            
+            .upload-area:hover {
+                border-color: #764ba2;
+                background: rgba(118, 75, 162, 0.05);
+                transition: all 0.3s ease;
+            }
+        `;
+      document.head.appendChild(style);
+    </script>
+  </body>
+</html>
