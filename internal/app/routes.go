@@ -22,6 +22,7 @@ func (r *Routes) Setup() {
 	r.setupUserRoutes()
 	r.setupChatRoutes()
 	r.setupTransactionRoutes()
+	r.setupCategoryRoutes()
 }
 
 func (r *Routes) setupHealthCheck() {
@@ -92,4 +93,13 @@ func (r *Routes) setupTransactionRoutes() {
 	transactionGroup.Get("/stats",
 		// r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.GetTransactionsStats)
+}
+
+func (r *Routes) setupCategoryRoutes() {
+	globalApi := r.app.Group("/api/v1")
+	categoryGroup := globalApi.Group("/categories")
+
+	categoryGroup.Post("/",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Category.CreateCategory)
 }

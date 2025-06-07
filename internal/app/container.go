@@ -72,6 +72,7 @@ func (c *Container) initializeRepositories() *Repositories {
 		ModelRegistry: repositories.NewModelRegistryRepository(c.Dependencies.Postgres),
 		LogMessage:    repositories.NewLogMessageRepository(c.Dependencies.Postgres),
 		Transaction:   repositories.NewTransactionRepository(c.Dependencies.Postgres),
+		Category:      repositories.NewCategoryRepository(c.Dependencies.Postgres),
 	}
 }
 
@@ -99,6 +100,11 @@ func (c *Container) initializeServices() *Services {
 			c.Dependencies.Logger,
 			c.Dependencies.LLMClient,
 		),
+		Category: services.NewCategoryService(
+			c.Repositories.Category,
+			c.Dependencies.Logger,
+			c.Dependencies.LLMClient,
+		),
 	}
 }
 
@@ -108,6 +114,7 @@ func (c *Container) initializeControllers() *Controllers {
 		User:        controllers.NewUserController(c.Services.User),
 		Chat:        controllers.NewChatController(c.Services.Chat, c.Dependencies.Validator),
 		Transaction: controllers.NewTransactionController(c.Services.Transaction),
+		Category:    controllers.NewCategoryController(c.Services.Category),
 	}
 }
 

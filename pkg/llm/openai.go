@@ -2,6 +2,8 @@ package llm
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"sync"
 
 	openai "github.com/openai/openai-go"
@@ -84,8 +86,15 @@ func (o *OpenAIClient) CreateEmbedding(ctx context.Context, input openai.Embeddi
 		return nil
 	}
 
+	// float64 to pgvector
+	embedding := make([]string, len(resp.Data[0].Embedding))
+	for i, v := range resp.Data[0].Embedding {
+		embedding[i] = fmt.Sprintf("%f", v)
+	}
+
+	embeddingData := fmt.Sprintf("[%s]", strings.Join(embedding, ","))
 	res := &responses.ResponseEmbedding{
-		Embeddings:  resp.Data[0].Embedding,
+		Embeddings:  embeddingData,
 		InputToken:  int(resp.Usage.PromptTokens),
 		OutputToken: int(resp.Usage.TotalTokens),
 	}

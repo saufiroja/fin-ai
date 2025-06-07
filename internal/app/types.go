@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/saufiroja/fin-ai/config"
 	"github.com/saufiroja/fin-ai/internal/domains/auth"
+	"github.com/saufiroja/fin-ai/internal/domains/categories"
 	"github.com/saufiroja/fin-ai/internal/domains/chat"
 	"github.com/saufiroja/fin-ai/internal/domains/log_message"
 	"github.com/saufiroja/fin-ai/internal/domains/model_registry"
@@ -35,6 +36,7 @@ type Repositories struct {
 	ModelRegistry model_registry.ModelRegistryStorer
 	LogMessage    log_message.LogMessageStorer
 	Transaction   transaction.TransactionStorer
+	Category      categories.CategoryStorer
 }
 
 type Services struct {
@@ -43,6 +45,7 @@ type Services struct {
 	Chat        chat.ChatManager
 	LogMessage  log_message.LogMessageManager
 	Transaction transaction.TransactionManager
+	Category    categories.CategoryManager
 }
 
 type Controllers struct {
@@ -50,4 +53,5 @@ type Controllers struct {
 	User        user.UserController
 	Chat        chat.ChatController
 	Transaction transaction.TransactionController
+	Category    categories.CategoryController
 }
