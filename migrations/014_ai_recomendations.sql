@@ -14,6 +14,7 @@ CREATE TABLE ai_recommendations (
     is_read BOOLEAN DEFAULT FALSE,
     expires_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     CONSTRAINT fk_recommendations_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 

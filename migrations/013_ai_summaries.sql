@@ -9,5 +9,6 @@ CREATE TABLE ai_summaries (
     period_end DATE NOT NULL,
     summary_data JSONB NOT NULL, -- insights, recommendations, highlights
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     CONSTRAINT fk_summaries_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );

@@ -2,7 +2,7 @@
 
 DROP TABLE IF EXISTS financial_goals;
 CREATE TABLE financial_goals (
-    goal_id VARCHAR(250) PRIMARY KEY,
+    financial_goal_id VARCHAR(250) PRIMARY KEY,
     user_id VARCHAR(250) NOT NULL,
     title VARCHAR(200) NOT NULL,
     description TEXT,
