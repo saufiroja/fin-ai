@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -22,56 +23,52 @@ type RedisClient struct {
 	context context.Context
 }
 
-func NewRedisClient(conf *config.AppConfig, logging logging.Logger) *RedisClient {
-	ctx := context.Background()
+var (
+	instance *RedisClient
+	once     sync.Once
+)
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     conf.Redis.URL, // Alamat Redis, misalnya "localhost:6379" atau "redis-server:6379"
-		Password: "",             // Gunakan jika Redis pakai password
-		DB:       0,              // Database yang digunakan (0–15)
+func NewRedisClient(conf *config.AppConfig, log logging.Logger) *RedisClient {
+	once.Do(func() {
+		ctx := context.Background()
 
-		// Connection pool
-		PoolSize:     10, // Jumlah maksimum koneksi dalam pool (disesuaikan dengan beban aplikasi)
-		MinIdleConns: 3,  // Koneksi idle minimum yang dijaga tetap terbuka
+		rdb := redis.NewClient(&redis.Options{
+			Addr:            conf.Redis.URL,
+			Password:        "",
+			DB:              0,
+			PoolSize:        10,
+			MinIdleConns:    3,
+			DialTimeout:     5 * time.Second,
+			ReadTimeout:     3 * time.Second,
+			WriteTimeout:    3 * time.Second,
+			PoolTimeout:     4 * time.Second,
+			ConnMaxIdleTime: 10 * time.Minute,
+		})
 
-		// Timeout
-		DialTimeout:  5 * time.Second, // Timeout saat koneksi dibuat
-		ReadTimeout:  3 * time.Second, // Timeout untuk operasi baca
-		WriteTimeout: 3 * time.Second, // Timeout untuk operasi tulis
+		if err := rdb.Ping(ctx).Err(); err != nil {
+			log.LogError(fmt.Sprintf("failed to connect to Redis at %s: %v", conf.Redis.URL, err))
+			return
+		}
 
-		// Health check
-		PoolTimeout:     4 * time.Second,  // Timeout tunggu koneksi dari pool
-		ConnMaxIdleTime: 10 * time.Minute, // Waktu maksimum koneksi idle sebelum ditutup
+		log.LogInfo(fmt.Sprintf("successfully connected to Redis at %s", conf.Redis.URL))
+
+		instance = &RedisClient{
+			client:  rdb,
+			context: ctx,
+		}
 	})
 
-	// Test connection
-	if err := rdb.Ping(ctx).Err(); err != nil {
-		logging.LogError(fmt.Sprintf("failed to connect to Redis at %s: %v", conf.Redis.URL, err))
-		return nil
-	}
-
-	logging.LogInfo(fmt.Sprintf("successfully connected to Redis at %s", conf.Redis.URL))
-
-	return &RedisClient{
-		client:  rdb,
-		context: ctx,
-	}
+	return instance
 }
 
 func (r *RedisClient) Set(key string, value interface{}) error {
 	_, err := r.client.Set(r.context, key, value, 0).Result()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (r *RedisClient) Get(key string) (string, error) {
 	value, err := r.client.Get(r.context, key).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return "", nil // Key does not exist
-		}
+	if err != nil && err != redis.Nil {
 		return "", err
 	}
 	return value, nil
@@ -79,15 +76,9 @@ func (r *RedisClient) Get(key string) (string, error) {
 
 func (r *RedisClient) Del(key string) error {
 	_, err := r.client.Del(r.context, key).Result()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (r *RedisClient) Close() error {
-	if err := r.client.Close(); err != nil {
-		return fmt.Errorf("failed to close Redis client: %w", err)
-	}
-	return nil
+	return r.client.Close()
 }
