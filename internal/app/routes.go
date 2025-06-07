@@ -83,7 +83,7 @@ func (r *Routes) setupTransactionRoutes() {
 		r.container.Controllers.Transaction.GetDetailedTransaction)
 
 	transactionGroup.Put("/:transaction_id",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.UpdateTransaction)
 
 	transactionGroup.Delete("/:transaction_id",

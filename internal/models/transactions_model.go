@@ -12,7 +12,7 @@ type Transaction struct {
 	CategoryId           string                 `json:"category_id"`
 	Type                 constants.TypeCategory `json:"type"`
 	Description          string                 `json:"description"`
-	DescriptionEmbedding any                    `json:"description_embedding"` // type data vector for description embedding
+	DescriptionEmbedding any                    `json:"-"` // type data vector for description embedding
 	Amount               int64                  `json:"amount"`
 	Source               string                 `json:"source"`
 	TransactionDate      time.Time              `json:"transaction_date"`

@@ -83,17 +83,41 @@ func (t *transactionService) GetAllTransactions(req *requests.GetAllTransactions
 	return res, nil
 }
 
-// DeleteTransaction implements transaction.TransactionManager.
 func (t *transactionService) DeleteTransaction(id string) error {
-	return t.transactionRepository.DeleteTransaction(id)
+	t.logging.LogInfo(fmt.Sprintf("Deleting transaction with ID: %s", id))
+
+	_, err := t.GetDetailedTransaction(id)
+	if err != nil {
+		t.logging.LogError(fmt.Sprintf("Transaction not found for deletion: %s", id))
+		return fmt.Errorf("transaction not found: %w", err)
+	}
+
+	err = t.transactionRepository.DeleteTransaction(id)
+	if err != nil {
+		t.logging.LogError(fmt.Sprintf("Error deleting transaction: %v", err))
+		return fmt.Errorf("failed to delete transaction: %w", err)
+	}
+
+	t.logging.LogInfo(fmt.Sprintf("Transaction with ID %s deleted successfully", id))
+	return nil
 }
 
-// GetDetailedTransaction implements transaction.TransactionManager.
 func (t *transactionService) GetDetailedTransaction(id string) (*models.Transaction, error) {
-	return t.transactionRepository.GetTransactionByID(id)
+	t.logging.LogInfo(fmt.Sprintf("Fetching detailed transaction for ID: %s", id))
+	transaction, err := t.transactionRepository.GetTransactionByID(id)
+	if err != nil {
+		t.logging.LogError(fmt.Sprintf("Error fetching transaction by ID %s: %v", id, err))
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+	if transaction == nil {
+		t.logging.LogWarn(fmt.Sprintf("Transaction with ID %s not found", id))
+		return nil, fmt.Errorf("transaction not found")
+	}
+
+	t.logging.LogInfo(fmt.Sprintf("Successfully fetched transaction with ID: %s", id))
+	return transaction, nil
 }
 
-// GetTransactionsStats implements transaction.TransactionManager.
 func (t *transactionService) GetTransactionsStats() (*models.Transaction, error) {
 	panic("unimplemented")
 }
@@ -257,7 +281,101 @@ func (t *transactionService) parseConfidenceFromResponse(response string) (float
 	return confidence, nil
 }
 
-// UpdateTransaction implements transaction.TransactionManager.
-func (t *transactionService) UpdateTransaction(transaction *models.Transaction) error {
-	panic("unimplemented")
+func (t *transactionService) UpdateTransaction(transactionId string, req *requests.UpdateTransactionRequest) error {
+	t.logging.LogInfo(fmt.Sprintf("Updating transaction: %+v", req))
+
+	existingTransaction, err := t.transactionRepository.GetTransactionByID(transactionId)
+	if err != nil {
+		t.logging.LogError(fmt.Sprintf("Error fetching transaction by ID %s: %v", transactionId, err))
+		return fmt.Errorf("failed to get transaction for update: %w", err)
+	}
+
+	if existingTransaction == nil {
+		t.logging.LogWarn(fmt.Sprintf("Transaction with ID %s not found for update", transactionId))
+		return fmt.Errorf("transaction not found for update")
+	}
+
+	// If the description has changed, we need to re-create the embedding and AI confidence
+	if existingTransaction.Description != req.Description {
+		t.logging.LogInfo("Description has changed, re-creating embedding and AI confidence")
+		// Create new embedding
+		input := openai.EmbeddingNewParamsInputUnion{
+			OfString: param.NewOpt(req.Description), // Use new description
+		}
+		t.logging.LogInfo("Starting to create new embedding for updated transaction description")
+		embedding := t.openaiClient.CreateEmbedding(context.Background(), input)
+		if embedding == nil || embedding.Embeddings == "" {
+			t.logging.LogError("Failed to create new embedding for updated transaction")
+			return fmt.Errorf("failed to create new embedding for updated transaction")
+		}
+		req.DescriptionEmbedding = embedding.Embeddings
+		t.logging.LogInfo("Successfully created new embedding for updated transaction description")
+		// Re-calculate AI confidence
+		messagePrompt := []openai.ChatCompletionMessageParamUnion{
+			{OfSystem: &openai.ChatCompletionSystemMessageParam{
+				Name: param.Opt[string]{Value: "system"},
+				Content: openai.ChatCompletionSystemMessageParamContentUnion{
+					OfString: param.NewOpt(prompt.TransactionConfidenceSystemPrompt),
+				},
+			},
+			},
+			{OfUser: &openai.ChatCompletionUserMessageParam{
+				Name: param.Opt[string]{Value: "user"},
+				Content: openai.ChatCompletionUserMessageParamContentUnion{
+					OfString: param.NewOpt(fmt.Sprintf(prompt.TransactionConfidenceUserPromptTemplate, req.CategoryId, req.Description)),
+				},
+			},
+			},
+		}
+		t.logging.LogInfo("Starting to get AI confidence score for updated transaction")
+
+		responseAi, err := t.openaiClient.SendChat(context.Background(), "gpt-4o-mini", messagePrompt)
+		if err != nil {
+			t.logging.LogError(fmt.Sprintf("Error creating chat completion for updated transaction confidence: %v", err))
+			return fmt.Errorf("failed to get AI confidence for updated transaction: %w", err)
+		}
+		if responseStr, ok := responseAi.Response.(string); ok && len(responseStr) > 0 {
+			if confidence, parseErr := t.parseConfidenceFromResponse(responseStr); parseErr == nil {
+				req.AiCategoryConfidence = confidence
+			} else {
+				t.logging.LogWarn(fmt.Sprintf("Failed to parse AI confidence response for updated transaction: %v", parseErr))
+				req.AiCategoryConfidence = 0.0 // Default confidence on parse error
+			}
+		} else {
+			t.logging.LogWarn("AI confidence response for updated transaction was empty or invalid")
+			req.AiCategoryConfidence = 0.0 // Default confidence if response is invalid
+		}
+		t.logging.LogInfo(fmt.Sprintf("Successfully updated AI confidence for transaction ID %s: %.2f", transactionId, req.AiCategoryConfidence))
+	} else {
+		t.logging.LogInfo("Description has not changed, skipping embedding and AI confidence update")
+		// If description hasn't changed, keep existing embedding and AI confidence
+		req.DescriptionEmbedding = existingTransaction.DescriptionEmbedding
+		req.AiCategoryConfidence = existingTransaction.AiCategoryConfidence
+	}
+	// Update timestamps
+	transaction := &models.Transaction{
+		TransactionId:        transactionId,
+		UserId:               existingTransaction.UserId,
+		CategoryId:           req.CategoryId,
+		Type:                 req.Type,
+		Description:          req.Description,
+		DescriptionEmbedding: req.DescriptionEmbedding,
+		Amount:               req.Amount,
+		Source:               req.Source,
+		IsAutoCategorized:    req.IsAutoCategorized,
+		AiCategoryConfidence: req.AiCategoryConfidence,
+		TransactionDate:      existingTransaction.TransactionDate, // Keep original date
+		CreatedAt:            existingTransaction.CreatedAt,       // Keep original created at
+		UpdatedAt:            time.Now(),                          // Update to current time
+	}
+
+	// Update the transaction in the repository
+	err = t.transactionRepository.UpdateTransaction(transaction)
+	if err != nil {
+		t.logging.LogError(fmt.Sprintf("Error updating transaction: %v", err))
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+
+	t.logging.LogInfo(fmt.Sprintf("Transaction with ID %s updated successfully", transaction.TransactionId))
+	return nil
 }

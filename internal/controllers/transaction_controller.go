@@ -33,7 +33,11 @@ func (t *transactionController) GetAllTransactions(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return ctx.JSON(transactions)
+	return ctx.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Transactions retrieved successfully",
+		Data:    transactions,
+	})
 }
 
 func (t *transactionController) CreateTransaction(ctx *fiber.Ctx) error {
@@ -63,12 +67,50 @@ func (t *transactionController) CreateTransaction(ctx *fiber.Ctx) error {
 
 // DeleteTransaction implements transaction.TransactionController.
 func (t *transactionController) DeleteTransaction(ctx *fiber.Ctx) error {
-	panic("unimplemented")
+	transactionId := ctx.Params("transaction_id")
+	if transactionId == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Transaction ID is required",
+		})
+	}
+
+	if err := t.transactionService.DeleteTransaction(transactionId); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to delete transaction",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Transaction deleted successfully",
+	})
 }
 
 // GetDetailedTransaction implements transaction.TransactionController.
 func (t *transactionController) GetDetailedTransaction(ctx *fiber.Ctx) error {
-	panic("unimplemented")
+	transactionId := ctx.Params("transaction_id")
+	if transactionId == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Transaction ID is required",
+		})
+	}
+
+	transaction, err := t.transactionService.GetDetailedTransaction(transactionId)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to retrieve transaction details",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Transaction details retrieved successfully",
+		Data:    transaction,
+	})
 }
 
 // GetTransactionsStats implements transaction.TransactionController.
@@ -78,5 +120,34 @@ func (t *transactionController) GetTransactionsStats(ctx *fiber.Ctx) error {
 
 // UpdateTransaction implements transaction.TransactionController.
 func (t *transactionController) UpdateTransaction(ctx *fiber.Ctx) error {
-	panic("unimplemented")
+	transactionId := ctx.Params("transaction_id")
+	if transactionId == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Transaction ID is required",
+		})
+	}
+
+	req := &requests.UpdateTransactionRequest{
+		UserId: ctx.Locals("user_id").(string), // Assuming user_id is set in context
+	}
+
+	if err := ctx.BodyParser(req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid request body",
+		})
+	}
+
+	if err := t.transactionService.UpdateTransaction(transactionId, req); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to update transaction",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Transaction updated successfully",
+	})
 }

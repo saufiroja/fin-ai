@@ -5,7 +5,6 @@ import (
 )
 
 type TransactionRequest struct {
-	TransactionId     string                 `json:"transaction_id"`
 	UserId            string                 `json:"user_id"`
 	CategoryId        string                 `json:"category_id"`
 	Type              constants.TypeCategory `json:"type"`
@@ -13,6 +12,18 @@ type TransactionRequest struct {
 	Amount            int64                  `json:"amount"`
 	Source            string                 `json:"source"`
 	IsAutoCategorized bool                   `json:"is_auto_categorized"`
+}
+
+type UpdateTransactionRequest struct {
+	UserId               string                 `json:"user_id" validate:"omitempty"`
+	CategoryId           string                 `json:"category_id" validate:"omitempty"`
+	Type                 constants.TypeCategory `json:"type" validate:"omitempty,oneof=income expense"`
+	Description          string                 `json:"description" validate:"omitempty,max=255"`
+	DescriptionEmbedding any                    `json:"description_embedding" validate:"omitempty,max=255"`
+	Amount               int64                  `json:"amount" validate:"omitempty,min=0"`
+	Source               string                 `json:"source" validate:"omitempty,max=255"`
+	IsAutoCategorized    bool                   `json:"is_auto_categorized" validate:"omitempty"`
+	AiCategoryConfidence float64                `json:"ai_category_confidence" validate:"omitempty,min=0,max=1"`
 }
 
 type GetAllTransactionsQuery struct {
