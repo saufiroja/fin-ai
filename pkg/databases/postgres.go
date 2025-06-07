@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sync"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/saufiroja/fin-ai/config"
@@ -43,6 +44,12 @@ func NewPostgres(conf *config.AppConfig, logger logging.Logger) PostgresManager 
 		if err != nil {
 			logger.LogPanic(fmt.Sprintf("Error opening databases: %v", err))
 		}
+
+		// Set connection pool settings
+		db.SetMaxOpenConns(20)                 // Maksimum total koneksi terbuka ke DB
+		db.SetMaxIdleConns(10)                 // Maksimum koneksi idle di pool
+		db.SetConnMaxIdleTime(5 * time.Minute) // Idle lebih dari ini akan ditutup
+		db.SetConnMaxLifetime(1 * time.Hour)   // Umur maksimal koneksi
 
 		if err := db.Ping(); err != nil {
 			logger.LogPanic(fmt.Sprintf("Error connecting to databases: %v", err))

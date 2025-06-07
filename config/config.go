@@ -31,6 +31,17 @@ type AppConfig struct {
 	OpenAI struct {
 		ApiKey string
 	}
+	Redis struct {
+		URL string
+	}
+	Minio struct {
+		Endpoint  string
+		AccessKey string
+		SecretKey string
+		Bucket    string
+		Region    string
+		UseSSL    bool
+	}
 }
 
 var appConfig *AppConfig
@@ -52,6 +63,8 @@ func NewAppConfig(logging logging.Logger) *AppConfig {
 			appConfig.initPostgres()
 			appConfig.initJwt()
 			appConfig.initOpenAI(logging)
+			appConfig.initRedis()
+			appConfig.initMinio()
 		} else {
 			logging.LogInfo("AppConfig already created")
 		}
@@ -106,4 +119,25 @@ func (c *AppConfig) initOpenAI(logging logging.Logger) {
 	if c.OpenAI.ApiKey == "" {
 		logging.LogPanic("OpenAI API key not found")
 	}
+}
+
+func (c *AppConfig) initRedis() {
+	host := os.Getenv("REDIS_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+	port := os.Getenv("REDIS_PORT")
+	if port == "" {
+		port = "6379"
+	}
+
+	c.Redis.URL = host + ":" + port
+}
+
+func (c *AppConfig) initMinio() {
+	c.Minio.Endpoint = os.Getenv("MINIO_ENDPOINT")
+	c.Minio.AccessKey = os.Getenv("MINIO_ACCESS_KEY")
+	c.Minio.SecretKey = os.Getenv("MINIO_SECRET_KEY")
+	c.Minio.Region = os.Getenv("MINIO_REGION")
+	c.Minio.UseSSL = os.Getenv("MINIO_USE_SSL") == "true"
 }

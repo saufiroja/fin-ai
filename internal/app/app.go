@@ -15,6 +15,8 @@ import (
 	"github.com/saufiroja/fin-ai/pkg/databases"
 	"github.com/saufiroja/fin-ai/pkg/llm"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
+	"github.com/saufiroja/fin-ai/pkg/minio"
+	"github.com/saufiroja/fin-ai/pkg/redis"
 )
 
 type App struct {
@@ -32,6 +34,16 @@ func (a *App) Start() {
 	conf := config.NewAppConfig(logger)
 	postgresInstance := databases.NewPostgres(conf, logger)
 	authMiddleware := middleware.Authorization(conf)
+	minioClient := minio.NewMinioClient(conf, logger)
+	if minioClient == nil {
+		logger.LogPanic("failed to create MinIO client")
+	}
+	redisClient := redis.NewRedisClient(conf, logger)
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			logger.LogError(fmt.Sprintf("failed to close redis connection: %v", err))
+		}
+	}()
 	llmClient := llm.NewOpenAI(conf)
 	defer func() {
 		if err := postgresInstance.CloseConnection(); err != nil {

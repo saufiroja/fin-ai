@@ -1,19 +1,19 @@
 version: '3.7'
-services:
-  fin-ai:
-    image: fin-ai:0.0.1
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - '8080:8080'
-    depends_on:
-      - postgres
-    networks:
-      - fin-ai
 
+services:
+  # fin-ai:
+  #   image: fin-ai:0.0.1
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - '8080:8080'
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - fin-ai
   postgres:
-    image: postgres:15
+    image: ankane/pgvector
     container_name: postgres
     ports:
       - '5434:5432'
@@ -27,9 +27,45 @@ services:
     networks:
       - fin-ai
 
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - '6379:6379'
+    networks:
+      - fin-ai
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - '8081:8081'
+    depends_on:
+      - redis
+    networks:
+      - fin-ai
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - '9000:9000' # S3-compatible API
+      - '9001:9001' # Web UI
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - fin-ai
+
 networks:
   fin-ai:
     driver: bridge
 
 volumes:
   postgres-data:
+  minio-data:
