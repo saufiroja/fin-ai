@@ -5,4 +5,5 @@ CREATE DATABASE finaidb;
 
 GRANT ALL PRIVILEGES ON DATABASE finaidb TO root;
 
-
+\c finaidb;
+CREATE EXTENSION IF NOT EXISTS vector;

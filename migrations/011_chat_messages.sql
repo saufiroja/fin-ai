@@ -7,6 +7,7 @@ CREATE TABLE chat_messages (
     chat_session_id VARCHAR(250) NOT NULL,
     sender chat_message_sender NOT NULL,
     message TEXT NOT NULL,
+    message_embedding vector(1536) NOT NULL, -- for OpenAI embeddings
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -14,3 +15,7 @@ CREATE TABLE chat_messages (
 );
 
 CREATE INDEX idx_chat_messages_session ON chat_messages(chat_session_id, created_at DESC);
+CREATE INDEX idx_chat_messages_embedding 
+ON chat_messages USING hnsw (message_embedding vector_cosine_ops);
+CREATE INDEX idx_chat_user_embedding 
+ON chat_messages (chat_session_id) INCLUDE (message_embedding);

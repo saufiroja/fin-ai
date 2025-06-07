@@ -7,6 +7,7 @@ CREATE TABLE transactions (
     category_id VARCHAR(250),
     type VARCHAR(20) CHECK (type IN ('income', 'expense')),
     description TEXT NOT NULL,
+    description_embedding vector(1536) NOT NULL, -- for OpenAI embeddings
     amount INTEGER NOT NULL,
     source VARCHAR(100) NOT NULL,
     transaction_date TIMESTAMP,
@@ -21,3 +22,7 @@ CREATE TABLE transactions (
 CREATE INDEX idx_transactions_transaction_id ON transactions(transaction_id);
 CREATE INDEX idx_transactions_user_date ON transactions(user_id, transaction_date DESC);
 CREATE INDEX idx_transactions_category_type ON transactions(category_id, type);
+CREATE INDEX idx_transactions_description_embedding 
+ON transactions USING hnsw (description_embedding vector_cosine_ops);
+CREATE INDEX idx_transactions_user_embedding 
+ON transactions (user_id) INCLUDE (description_embedding);

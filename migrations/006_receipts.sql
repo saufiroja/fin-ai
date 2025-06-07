@@ -6,6 +6,7 @@ CREATE TABLE receipts (
     user_id VARCHAR(250),
     file_path TEXT,
     extracted_receipt TEXT,
+    extracted_text_embedding vector(1536) NOT NULL, -- for OpenAI embeddings
     transaction_id VARCHAR(250),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
@@ -16,3 +17,5 @@ CREATE TABLE receipts (
 CREATE INDEX idx_receipts_user ON receipts(user_id);
 CREATE INDEX idx_receipts_transaction ON receipts(transaction_id);
 CREATE INDEX idx_receipts_receipt_id ON receipts(receipt_id);
+CREATE INDEX idx_receipts_text_embedding 
+ON receipts USING hnsw (extracted_text_embedding vector_cosine_ops);
