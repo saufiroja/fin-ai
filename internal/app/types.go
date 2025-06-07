@@ -7,6 +7,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/domains/chat"
 	"github.com/saufiroja/fin-ai/internal/domains/log_message"
 	"github.com/saufiroja/fin-ai/internal/domains/model_registry"
+	"github.com/saufiroja/fin-ai/internal/domains/transaction"
 	"github.com/saufiroja/fin-ai/internal/domains/user"
 	"github.com/saufiroja/fin-ai/internal/utils"
 	"github.com/saufiroja/fin-ai/pkg/databases"
@@ -33,17 +34,20 @@ type Repositories struct {
 	Chat          chat.ChatStorer
 	ModelRegistry model_registry.ModelRegistryStorer
 	LogMessage    log_message.LogMessageStorer
+	Transaction   transaction.TransactionStorer
 }
 
 type Services struct {
-	Auth       auth.AuthManager
-	User       user.UserManager
-	Chat       chat.ChatManager
-	LogMessage log_message.LogMessageManager
+	Auth        auth.AuthManager
+	User        user.UserManager
+	Chat        chat.ChatManager
+	LogMessage  log_message.LogMessageManager
+	Transaction transaction.TransactionManager
 }
 
 type Controllers struct {
-	Auth auth.AuthController
-	User user.UserController
-	Chat chat.ChatController
+	Auth        auth.AuthController
+	User        user.UserController
+	Chat        chat.ChatController
+	Transaction transaction.TransactionController
 }

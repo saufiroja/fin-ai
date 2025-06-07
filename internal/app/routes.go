@@ -21,6 +21,7 @@ func (r *Routes) Setup() {
 	r.setupAuthRoutes()
 	r.setupUserRoutes()
 	r.setupChatRoutes()
+	r.setupTransactionRoutes()
 }
 
 func (r *Routes) setupHealthCheck() {
@@ -62,4 +63,33 @@ func (r *Routes) setupChatRoutes() {
 	chatGroup.Delete("/session/:chat_session_id/:user_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.DeleteChatSession)
 	chatGroup.Post("/send", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.SendChatMessage)
 	chatGroup.Get("/session-detail/:chat_session_id/:user_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.GetChatSessionDetail)
+}
+
+func (r *Routes) setupTransactionRoutes() {
+	globalApi := r.app.Group("/api/v1")
+	transactionGroup := globalApi.Group("/transactions")
+
+	transactionGroup.Post("/",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Transaction.CreateTransaction)
+
+	transactionGroup.Get("/",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Transaction.GetAllTransactions)
+
+	transactionGroup.Get("/:transaction_id",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Transaction.GetDetailedTransaction)
+
+	transactionGroup.Put("/:transaction_id",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Transaction.UpdateTransaction)
+
+	transactionGroup.Delete("/:transaction_id",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Transaction.DeleteTransaction)
+
+	transactionGroup.Get("/stats",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Transaction.GetTransactionsStats)
 }

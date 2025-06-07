@@ -623,8 +623,6 @@ Monitor System Performance:
 
 ---
 
-# Financial Tracker AI - Application Flow Documentation
-
 ## 1. 🔐 Authentication Flow
 
 ### Registration Process

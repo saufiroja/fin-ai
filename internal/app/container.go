@@ -39,7 +39,6 @@ func (c *Container) initializeDependencies() *Dependencies {
 	conf := config.NewAppConfig(logger)
 
 	postgresInstance := databases.NewPostgres(conf, logger)
-	c.setupPostgresCleanup(postgresInstance, logger)
 
 	minioClient := minio.NewMinioClient(conf, logger)
 	if minioClient == nil {
@@ -47,7 +46,6 @@ func (c *Container) initializeDependencies() *Dependencies {
 	}
 
 	redisClient := redis.NewRedisClient(conf, logger)
-	c.setupRedisCleanup(redisClient, logger)
 
 	llmClient := llm.NewOpenAI(conf)
 	validator := utils.NewValidator()
@@ -73,6 +71,7 @@ func (c *Container) initializeRepositories() *Repositories {
 		Chat:          repositories.NewChatRepository(c.Dependencies.Postgres),
 		ModelRegistry: repositories.NewModelRegistryRepository(c.Dependencies.Postgres),
 		LogMessage:    repositories.NewLogMessageRepository(c.Dependencies.Postgres),
+		Transaction:   repositories.NewTransactionRepository(c.Dependencies.Postgres),
 	}
 }
 
@@ -95,33 +94,22 @@ func (c *Container) initializeServices() *Services {
 			c.Repositories.ModelRegistry,
 			logMessageService,
 		),
+		Transaction: services.NewTransactionService(
+			c.Repositories.Transaction,
+			c.Dependencies.Logger,
+		),
 	}
 }
 
 func (c *Container) initializeControllers() *Controllers {
 	return &Controllers{
-		Auth: controllers.NewAuthController(c.Services.Auth, c.Dependencies.Validator),
-		User: controllers.NewUserController(c.Services.User),
-		Chat: controllers.NewChatController(c.Services.Chat, c.Dependencies.Validator),
+		Auth:        controllers.NewAuthController(c.Services.Auth, c.Dependencies.Validator),
+		User:        controllers.NewUserController(c.Services.User),
+		Chat:        controllers.NewChatController(c.Services.Chat, c.Dependencies.Validator),
+		Transaction: controllers.NewTransactionController(c.Services.Transaction),
 	}
 }
 
 func (c *Container) GetServerAddress() string {
 	return fmt.Sprintf("localhost:%s", c.Dependencies.Config.Http.Port)
-}
-
-func (c *Container) setupPostgresCleanup(postgres databases.PostgresManager, logger logging.Logger) {
-	defer func() {
-		if err := postgres.CloseConnection(); err != nil {
-			logger.LogError(fmt.Sprintf("failed to close postgres connection: %v", err))
-		}
-	}()
-}
-
-func (c *Container) setupRedisCleanup(redis *redis.RedisClient, logger logging.Logger) {
-	defer func() {
-		if err := redis.Close(); err != nil {
-			logger.LogError(fmt.Sprintf("failed to close redis connection: %v", err))
-		}
-	}()
 }
