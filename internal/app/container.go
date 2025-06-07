@@ -97,6 +97,7 @@ func (c *Container) initializeServices() *Services {
 		Transaction: services.NewTransactionService(
 			c.Repositories.Transaction,
 			c.Dependencies.Logger,
+			c.Dependencies.LLMClient,
 		),
 	}
 }

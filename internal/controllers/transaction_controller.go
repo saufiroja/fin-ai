@@ -36,9 +36,30 @@ func (t *transactionController) GetAllTransactions(ctx *fiber.Ctx) error {
 	return ctx.JSON(transactions)
 }
 
-// CreateTransaction implements transaction.TransactionController.
 func (t *transactionController) CreateTransaction(ctx *fiber.Ctx) error {
-	panic("unimplemented")
+	req := &requests.TransactionRequest{
+		UserId: ctx.Locals("user_id").(string), // Assuming user_id is set in context
+	}
+
+	if err := ctx.BodyParser(req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid request body",
+		})
+	}
+
+	if err := t.transactionService.InsertTransaction(req); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to create transaction",
+		})
+	}
+
+	return ctx.Status(fiber.StatusCreated).JSON(responses.Response{
+		Status:  fiber.StatusCreated,
+		Message: "Transaction created successfully",
+		Data:    req,
+	})
 }
 
 // DeleteTransaction implements transaction.TransactionController.

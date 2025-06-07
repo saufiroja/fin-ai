@@ -11,3 +11,9 @@ type ResponseAI struct {
 	InputToken  int    `json:"input_token"`
 	OutputToken int    `json:"output_token"`
 }
+
+type ResponseEmbedding struct {
+	Embeddings  []float64 `json:"embeddings"`
+	InputToken  int       `json:"input_token"`
+	OutputToken int       `json:"output_token"`
+}

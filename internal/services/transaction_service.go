@@ -1,28 +1,37 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"math"
+	"time"
 
+	"github.com/oklog/ulid/v2"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/packages/param"
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains/transaction"
 	"github.com/saufiroja/fin-ai/internal/models"
+	"github.com/saufiroja/fin-ai/pkg/llm"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 )
 
 type transactionService struct {
 	transactionRepository transaction.TransactionStorer
 	logging               logging.Logger
+	openaiClient          llm.OpenAI
 }
 
 func NewTransactionService(
 	transactionRepository transaction.TransactionStorer,
 	logging logging.Logger,
+	openaiClient llm.OpenAI,
 ) transaction.TransactionManager {
 	return &transactionService{
 		transactionRepository: transactionRepository,
 		logging:               logging,
+		openaiClient:          openaiClient,
 	}
 }
 
@@ -85,9 +94,38 @@ func (t *transactionService) GetTransactionsStats() (*models.Transaction, error)
 	panic("unimplemented")
 }
 
-// InsertTransaction implements transaction.TransactionManager.
-func (t *transactionService) InsertTransaction(transaction *models.Transaction) error {
-	panic("unimplemented")
+func (t *transactionService) InsertTransaction(req *requests.TransactionRequest) error {
+	t.logging.LogInfo(fmt.Sprintf("Inserting transaction: %+v", req))
+
+	input := openai.EmbeddingNewParamsInputUnion{
+		OfString: param.NewOpt(req.Description), // deskripsi transaksi sebagai input embedding
+	}
+	// create embedding if not provided
+	embedding := t.openaiClient.CreateEmbedding(context.Background(), input)
+
+	transaction := &models.Transaction{
+		TransactionId:        ulid.Make().String(),
+		UserId:               req.UserId,
+		CategoryId:           req.CategoryId,
+		Type:                 req.Type,
+		Description:          req.Description,
+		DescriptionEmbedding: embedding.Embeddings,
+		Amount:               req.Amount,
+		Source:               req.Source,
+		TransactionDate:      req.TransactionDate,
+		AiCategoryConfidence: req.AiCategoryConfidence,
+		IsAutoCategorized:    req.IsAutoCategorized,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
+	}
+
+	err := t.transactionRepository.InsertTransaction(transaction)
+	if err != nil {
+		t.logging.LogError(fmt.Sprintf("Error inserting transaction: %v", err))
+		return err
+	}
+
+	return nil
 }
 
 // UpdateTransaction implements transaction.TransactionManager.

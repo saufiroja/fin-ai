@@ -7,7 +7,7 @@ import (
 )
 
 type TransactionManager interface {
-	InsertTransaction(transaction *models.Transaction) error
+	InsertTransaction(req *requests.TransactionRequest) error
 	UpdateTransaction(transaction *models.Transaction) error
 	DeleteTransaction(id string) error
 	GetAllTransactions(*requests.GetAllTransactionsQuery) (*responses.GetAllTransactionsResponse, error)
