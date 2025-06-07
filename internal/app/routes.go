@@ -105,4 +105,11 @@ func (r *Routes) setupCategoryRoutes() {
 	categoryGroup.Get("/",
 		// r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Category.GetAllCategories)
+	categoryGroup.Put("/:category_id",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Category.UpdateCategoryById)
+	categoryGroup.Delete("/:category_id",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Category.DeleteCategoryById)
+
 }

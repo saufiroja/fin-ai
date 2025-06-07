@@ -14,3 +14,8 @@ type GetAllCategoryQuery struct {
 	Offset int    `query:"offset" validate:"omitempty,min=0"`
 	Search string `query:"search" validate:"omitempty"`
 }
+
+type UpdateCategoryRequest struct {
+	Name string                 `json:"name" validate:"required"`
+	Type constants.TypeCategory `json:"type" validate:"required"`
+}

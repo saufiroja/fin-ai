@@ -141,3 +141,154 @@ func (c *categoryService) FindAllCategories(req *requests.GetAllCategoryQuery) (
 	c.logging.LogInfo(fmt.Sprintf("Fetched %d categories successfully", len(categoriesList)))
 	return response, nil
 }
+
+func (c *categoryService) FindCategoryById(categoryId string) (*models.Category, error) {
+	c.logging.LogInfo(fmt.Sprintf("Fetching category by ID: %s", categoryId))
+
+	category, err := c.categoryRepository.FindCategoryById(categoryId)
+	if err != nil {
+		c.logging.LogError(fmt.Sprintf("Failed to fetch category by ID %s: %s", categoryId, err.Error()))
+		return nil, fmt.Errorf("failed to fetch category by ID %s: %w", categoryId, err)
+	}
+
+	if category == nil {
+		c.logging.LogInfo(fmt.Sprintf("Category with ID %s not found", categoryId))
+		return nil, nil // Return nil if not found
+	}
+
+	c.logging.LogInfo(fmt.Sprintf("Category with ID %s fetched successfully", categoryId))
+	return category, nil
+}
+
+func (c *categoryService) UpdateCategoryById(categoryId string, req *requests.UpdateCategoryRequest) error {
+	c.logging.LogInfo(fmt.Sprintf("Updating category with ID: %s", categoryId))
+
+	// Fetch existing category
+	existingCategory, err := c.FindCategoryById(categoryId)
+	if err != nil {
+		c.logging.LogError(fmt.Sprintf("Failed to fetch category by ID %s: %s", categoryId, err.Error()))
+		return fmt.Errorf("failed to fetch category by ID %s: %w", categoryId, err)
+	}
+
+	if existingCategory == nil {
+		c.logging.LogInfo(fmt.Sprintf("Category with ID %s not found for update", categoryId))
+		return fmt.Errorf("category with ID %s not found", categoryId)
+	}
+
+	// Use channels to communicate between goroutines
+	embeddingChan := make(chan string)
+	errorChan := make(chan error, 1)
+
+	// Start embedding creation in a goroutine
+	go func() {
+		defer close(embeddingChan)
+		defer close(errorChan)
+
+		input := openai.EmbeddingNewParamsInputUnion{
+			OfString: param.NewOpt(req.Name), // deskripsi transaksi sebagai input embedding
+		}
+
+		c.logging.LogInfo("starting to create embedding for updated category name")
+		embedding := c.openaiClient.CreateEmbedding(context.Background(), input)
+
+		if embedding != nil && embedding.Embeddings != "" {
+			embeddingChan <- embedding.Embeddings
+		} else {
+			errorChan <- fmt.Errorf("failed to create embedding for updated category name")
+		}
+	}()
+
+	// Prepare other data concurrently
+	var wg sync.WaitGroup
+	var timestamp time.Time
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		timestamp = time.Now()
+	}()
+
+	// Wait for other preparations
+	wg.Wait()
+
+	// Wait for embedding result
+	var embeddingResult string
+	select {
+	case emb := <-embeddingChan:
+		embeddingResult = emb
+	case err := <-errorChan:
+		c.logging.LogError(fmt.Sprintf("Failed to create embedding: %s", err.Error()))
+		return fmt.Errorf("failed to create embedding: %w", err)
+	}
+
+	// Update category data
+	existingCategory.Name = req.Name
+	existingCategory.NameEmbedding = embeddingResult
+	existingCategory.Type = req.Type
+	existingCategory.UpdatedAt = timestamp
+
+	err = c.categoryRepository.UpdateCategoryById(existingCategory)
+	if err != nil {
+		c.logging.LogError(fmt.Sprintf("Failed to update category: %s", err.Error()))
+		return fmt.Errorf("failed to update category: %w", err)
+	}
+
+	c.logging.LogInfo(fmt.Sprintf("Category with ID %s updated successfully", categoryId))
+	return nil
+}
+
+func (c *categoryService) DeleteCategoryById(categoryId string) error {
+	c.logging.LogInfo(fmt.Sprintf("Deleting category with ID: %s", categoryId))
+
+	// Check if category exists
+	_, err := c.FindCategoryById(categoryId)
+	if err != nil {
+		c.logging.LogError(fmt.Sprintf("Failed to fetch category by ID %s: %s", categoryId, err.Error()))
+		return fmt.Errorf("failed to fetch category by ID %s: %w", categoryId, err)
+	}
+
+	err = c.categoryRepository.DeleteCategoryById(categoryId)
+	if err != nil {
+		c.logging.LogError(fmt.Sprintf("Failed to delete category by ID %s: %s", categoryId, err.Error()))
+		return fmt.Errorf("failed to delete category by ID %s: %w", categoryId, err)
+	}
+
+	c.logging.LogInfo(fmt.Sprintf("Category with ID %s deleted successfully", categoryId))
+	return nil
+}
+
+// UpdateCategoriesBatch updates multiple categories concurrently using goroutines
+func (c *categoryService) UpdateCategoriesBatch(updates map[string]*requests.UpdateCategoryRequest) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	c.logging.LogInfo(fmt.Sprintf("Updating %d categories concurrently", len(updates)))
+
+	// Use buffered channels to prevent goroutine blocking
+	resultChan := make(chan error, len(updates))
+
+	// Update categories concurrently
+	for categoryId, req := range updates {
+		go func(id string, updateReq *requests.UpdateCategoryRequest) {
+			err := c.UpdateCategoryById(id, updateReq)
+			resultChan <- err
+		}(categoryId, req)
+	}
+
+	// Collect results from all goroutines
+	var errors []error
+	for i := 0; i < len(updates); i++ {
+		if err := <-resultChan; err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	// Return combined errors if any
+	if len(errors) > 0 {
+		return fmt.Errorf("failed to update %d out of %d categories: %v", len(errors), len(updates), errors)
+	}
+
+	c.logging.LogInfo(fmt.Sprintf("Successfully updated %d categories", len(updates)))
+	return nil
+}

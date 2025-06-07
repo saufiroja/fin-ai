@@ -6,7 +6,10 @@ import (
 )
 
 type CategoryStorer interface {
-	InsertCategory(category *models.Category) error
-	FindAllCategories(req *requests.GetAllCategoryQuery) ([]models.Category, error)
-	CountCategories(req *requests.GetAllCategoryQuery) (int64, error)
+	InsertCategory(*models.Category) error
+	FindAllCategories(*requests.GetAllCategoryQuery) ([]models.Category, error)
+	CountCategories(*requests.GetAllCategoryQuery) (int64, error)
+	FindCategoryById(categoryId string) (*models.Category, error)
+	UpdateCategoryById(*models.Category) error
+	DeleteCategoryById(categoryId string) error
 }

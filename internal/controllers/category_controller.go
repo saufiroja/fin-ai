@@ -73,3 +73,59 @@ func (cc *categoryController) GetAllCategories(c *fiber.Ctx) error {
 		},
 	})
 }
+
+func (cc *categoryController) UpdateCategoryById(c *fiber.Ctx) error {
+	categoryId := c.Params("category_id")
+	if categoryId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Category ID is required",
+		})
+	}
+
+	req := &requests.UpdateCategoryRequest{}
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid request body",
+		})
+	}
+
+	err := cc.categoryService.UpdateCategoryById(categoryId, req)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to update category",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Category updated successfully",
+		Data:    nil,
+	})
+}
+
+func (cc *categoryController) DeleteCategoryById(c *fiber.Ctx) error {
+	categoryId := c.Params("category_id")
+	if categoryId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Category ID is required",
+		})
+	}
+
+	err := cc.categoryService.DeleteCategoryById(categoryId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to delete category",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Category deleted successfully",
+		Data:    nil,
+	})
+}

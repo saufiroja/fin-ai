@@ -75,3 +75,52 @@ func (c *categoryRepository) CountCategories(req *requests.GetAllCategoryQuery) 
 
 	return count, nil
 }
+
+func (c *categoryRepository) UpdateCategoryById(category *models.Category) error {
+	db := c.DB.Connection()
+
+	query := `
+	UPDATE categories
+	SET name = $1, 
+	name_embedding = $2, 
+	type = $3, 
+	updated_at = NOW()
+	WHERE category_id = $4`
+	_, err := db.Exec(query, category.Name, category.NameEmbedding, category.Type, category.CategoryId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *categoryRepository) FindCategoryById(categoryId string) (*models.Category, error) {
+	db := c.DB.Connection()
+
+	query := `
+	SELECT category_id, name, name_embedding, type, created_at, updated_at
+	FROM categories
+	WHERE category_id = $1`
+
+	var category models.Category
+	err := db.QueryRow(query, categoryId).Scan(&category.CategoryId, &category.Name, &category.NameEmbedding, &category.Type, &category.CreatedAt, &category.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &category, nil
+}
+
+func (c *categoryRepository) DeleteCategoryById(categoryId string) error {
+	db := c.DB.Connection()
+
+	query := `
+	DELETE FROM categories
+	WHERE category_id = $1`
+	_, err := db.Exec(query, categoryId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
