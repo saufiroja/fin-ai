@@ -1,4 +1,4 @@
-package interfaces
+package domains
 
 import "github.com/saufiroja/fin-ai/internal/models"
 

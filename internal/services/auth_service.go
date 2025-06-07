@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/oklog/ulid/v2"
 	"github.com/saufiroja/fin-ai/config"
-	"github.com/saufiroja/fin-ai/internal/interfaces"
+	"github.com/saufiroja/fin-ai/internal/domains"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/internal/utils"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
@@ -16,18 +16,18 @@ import (
 )
 
 type authService struct {
-	repoUser       interfaces.UserRepositoryInterface
+	repoUser       domains.UserRepositoryInterface
 	logging        logging.Logger
 	tokenGenerator utils.TokenGenerator
 	conf           *config.AppConfig
 }
 
 func NewAuthService(
-	repo interfaces.UserRepositoryInterface,
+	repo domains.UserRepositoryInterface,
 	logging logging.Logger,
 	tokenGenerator utils.TokenGenerator,
 	conf *config.AppConfig,
-) interfaces.AuthServiceInterface {
+) domains.AuthServiceInterface {
 	return &authService{
 		repoUser:       repo,
 		logging:        logging,

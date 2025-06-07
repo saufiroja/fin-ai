@@ -4,17 +4,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/saufiroja/fin-ai/internal/interfaces"
+	"github.com/saufiroja/fin-ai/internal/domains"
 	"github.com/saufiroja/fin-ai/internal/models"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 )
 
 type userService struct {
-	UserRepository interfaces.UserRepositoryInterface
+	UserRepository domains.UserRepositoryInterface
 	logging        logging.Logger
 }
 
-func NewUserService(userRepository interfaces.UserRepositoryInterface, logger logging.Logger) interfaces.UserServiceInterface {
+func NewUserService(userRepository domains.UserRepositoryInterface, logger logging.Logger) domains.UserServiceInterface {
 	return &userService{
 		UserRepository: userRepository,
 		logging:        logger,

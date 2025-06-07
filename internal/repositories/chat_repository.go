@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"github.com/saufiroja/fin-ai/internal/interfaces"
+	"github.com/saufiroja/fin-ai/internal/domains"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/databases"
 )
@@ -10,7 +10,7 @@ type chatRepository struct {
 	DB databases.PostgresManager
 }
 
-func NewChatRepository(db databases.PostgresManager) interfaces.ChatRepositoryInterface {
+func NewChatRepository(db databases.PostgresManager) domains.ChatRepositoryInterface {
 	return &chatRepository{
 		DB: db,
 	}

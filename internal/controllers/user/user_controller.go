@@ -2,15 +2,15 @@ package user
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/saufiroja/fin-ai/internal/interfaces"
+	"github.com/saufiroja/fin-ai/internal/domains"
 	"github.com/saufiroja/fin-ai/internal/models"
 )
 
 type userController struct {
-	UserService interfaces.UserServiceInterface
+	UserService domains.UserServiceInterface
 }
 
-func NewUserController(userService interfaces.UserServiceInterface) UserControllerInterface {
+func NewUserController(userService domains.UserServiceInterface) UserControllerInterface {
 	return &userController{
 		UserService: userService,
 	}

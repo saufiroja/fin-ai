@@ -4,17 +4,17 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/saufiroja/fin-ai/internal/interfaces"
+	"github.com/saufiroja/fin-ai/internal/domains"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/internal/utils"
 )
 
 type authController struct {
-	authService interfaces.AuthServiceInterface
+	authService domains.AuthServiceInterface
 	validator   utils.Validator
 }
 
-func NewAuthController(authService interfaces.AuthServiceInterface, validator utils.Validator) AuthController {
+func NewAuthController(authService domains.AuthServiceInterface, validator utils.Validator) AuthController {
 	return &authController{
 		authService: authService,
 		validator:   validator,
