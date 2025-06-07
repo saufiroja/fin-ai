@@ -102,4 +102,7 @@ func (r *Routes) setupCategoryRoutes() {
 	categoryGroup.Post("/",
 		// r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Category.CreateCategory)
+	categoryGroup.Get("/",
+		// r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Category.GetAllCategories)
 }

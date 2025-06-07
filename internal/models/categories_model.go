@@ -9,8 +9,7 @@ import (
 type Category struct {
 	CategoryId    string                 `json:"category_id"`
 	Name          string                 `json:"name"`
-	NameEmbedding any                    `json:"name_embedding"` // type data vector for name embedding
-	Description   string                 `json:"description"`
+	NameEmbedding any                    `json:"-"` // type data vector for name embedding
 	Type          constants.TypeCategory `json:"type"`
 	CreatedAt     time.Time              `json:"created_at"`
 	UpdatedAt     time.Time              `json:"updated_at"`
