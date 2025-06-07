@@ -11,7 +11,7 @@ type userController struct {
 	UserService domains.UserServiceInterface
 }
 
-func NewUserController(userService domains.UserServiceInterface) UserControllerInterface {
+func NewUserController(userService domains.UserServiceInterface) UserController {
 	return &userController{
 		UserService: userService,
 	}

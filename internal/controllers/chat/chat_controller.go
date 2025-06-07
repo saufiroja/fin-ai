@@ -15,7 +15,7 @@ type chatController struct {
 	validator   utils.Validator
 }
 
-func NewChatController(chatService domains.ChatServiceInterface, validator utils.Validator) ChatControllerInterface {
+func NewChatController(chatService domains.ChatServiceInterface, validator utils.Validator) ChatController {
 	return &chatController{
 		chatService: chatService,
 		validator:   validator,
