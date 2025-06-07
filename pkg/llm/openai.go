@@ -16,7 +16,6 @@ type OpenAI interface {
 
 type OpenAIClient struct {
 	client openai.Client
-	model  string
 }
 
 var (
