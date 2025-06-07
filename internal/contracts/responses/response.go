@@ -1,4 +1,4 @@
-package models
+package responses
 
 type Response struct {
 	Status  int         `json:"status"`

@@ -8,6 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/oklog/ulid/v2"
 	"github.com/saufiroja/fin-ai/config"
+	"github.com/saufiroja/fin-ai/internal/contracts/requests"
+	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/internal/utils"
@@ -36,7 +38,7 @@ func NewAuthService(
 	}
 }
 
-func (s *authService) RegisterUser(req *models.RegisterUser) error {
+func (s *authService) RegisterUser(req *requests.RegisterUser) error {
 	s.logging.LogInfo("Registering user")
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -63,7 +65,7 @@ func (s *authService) RegisterUser(req *models.RegisterUser) error {
 	return nil
 }
 
-func (s *authService) LoginUser(req *models.LoginUser, ctx *fiber.Ctx) (*models.LoginResponse, error) {
+func (s *authService) LoginUser(req *requests.LoginUser, ctx *fiber.Ctx) (*responses.LoginResponse, error) {
 	s.logging.LogInfo("Logging in user")
 
 	user, err := s.repoUser.FindUserByEmail(req.Email)
@@ -84,7 +86,7 @@ func (s *authService) LoginUser(req *models.LoginUser, ctx *fiber.Ctx) (*models.
 		return nil, errors.New("failed to generate refresh token")
 	}
 
-	res := &models.LoginResponse{
+	res := &responses.LoginResponse{
 		AccessToken:           accessToken.Token,
 		RefreshToken:          refreshToken.Token,
 		AccessTokenExpiresAt:  accessToken.ExpiredAt,
@@ -133,7 +135,7 @@ func (s *authService) ValidateRefreshToken(token string) (*models.JwtGenerator, 
 	return newAccessToken, nil
 }
 
-func (s *authService) setAuthCookies(ctx *fiber.Ctx, res *models.LoginResponse) {
+func (s *authService) setAuthCookies(ctx *fiber.Ctx, res *responses.LoginResponse) {
 	domain := "localhost" // or use s.conf.AppDomain if configurable
 
 	ctx.Cookie(&fiber.Cookie{

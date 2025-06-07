@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/saufiroja/fin-ai/config"
-	"github.com/saufiroja/fin-ai/internal/models"
+	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 )
 
 func Authorization(conf *config.AppConfig) fiber.Handler {
@@ -23,7 +23,7 @@ func Authorization(conf *config.AppConfig) fiber.Handler {
 		}
 
 		if tokenString == "" {
-			return ctx.Status(fiber.StatusUnauthorized).JSON(models.Response{
+			return ctx.Status(fiber.StatusUnauthorized).JSON(responses.Response{
 				Status:  fiber.StatusUnauthorized,
 				Message: "Unauthorized: No token provided",
 			})
@@ -39,7 +39,7 @@ func Authorization(conf *config.AppConfig) fiber.Handler {
 		})
 
 		if err != nil || !token.Valid {
-			return ctx.Status(fiber.StatusUnauthorized).JSON(models.Response{
+			return ctx.Status(fiber.StatusUnauthorized).JSON(responses.Response{
 				Status:  fiber.StatusUnauthorized,
 				Message: "Unauthorized: Invalid token",
 			})

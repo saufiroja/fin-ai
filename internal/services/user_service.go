@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/saufiroja/fin-ai/internal/contracts/requests"
+	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains"
-	"github.com/saufiroja/fin-ai/internal/models"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 )
 
@@ -21,7 +22,7 @@ func NewUserService(userRepository domains.UserRepositoryInterface, logger loggi
 	}
 }
 
-func (s *userService) UpdateUserById(userId string, req *models.UpdateUserRequest) error {
+func (s *userService) UpdateUserById(userId string, req *requests.UpdateUserRequest) error {
 	s.logging.LogInfo(fmt.Sprintf("Updating user with ID: %s", userId))
 	_, err := s.UserRepository.FindUserById(userId)
 	if err != nil {
@@ -57,7 +58,7 @@ func (s *userService) DeleteUserById(userId string) error {
 	return nil
 }
 
-func (s *userService) GetMe(userId string) (*models.FindUserById, error) {
+func (s *userService) GetMe(userId string) (*responses.FindUserById, error) {
 	s.logging.LogInfo("Getting user information")
 
 	user, err := s.UserRepository.FindUserById(userId)

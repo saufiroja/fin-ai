@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"github.com/saufiroja/fin-ai/internal/contracts/requests"
+	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/databases"
@@ -41,12 +43,12 @@ func (r *userRepository) FindUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) FindUserById(userId string) (*models.FindUserById, error) {
+func (r *userRepository) FindUserById(userId string) (*responses.FindUserById, error) {
 	db := r.DB.Connection()
 	query := `SELECT user_id, full_name, email FROM users WHERE user_id = $1`
 	row := db.QueryRow(query, userId)
 
-	var user models.FindUserById
+	var user responses.FindUserById
 	err := row.Scan(&user.UserId, &user.FullName, &user.Email)
 	if err != nil {
 		return nil, err
@@ -55,7 +57,7 @@ func (r *userRepository) FindUserById(userId string) (*models.FindUserById, erro
 	return &user, nil
 }
 
-func (r *userRepository) UpdateUserById(userId string, req *models.UpdateUserRequest) error {
+func (r *userRepository) UpdateUserById(userId string, req *requests.UpdateUserRequest) error {
 	db := r.DB.Connection()
 	query := `UPDATE users SET 
 			full_name = $1,
