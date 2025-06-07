@@ -24,5 +24,15 @@ CREATE INDEX idx_transactions_user_date ON transactions(user_id, transaction_dat
 CREATE INDEX idx_transactions_category_type ON transactions(category_id, type);
 CREATE INDEX idx_transactions_description_embedding 
 ON transactions USING hnsw (description_embedding vector_cosine_ops);
-CREATE INDEX idx_transactions_user_embedding 
-ON transactions (user_id) INCLUDE (description_embedding);
+CREATE INDEX idx_transactions_user_id ON transactions (user_id);
+CREATE INDEX idx_transactions_user_date_type
+ON transactions (user_id, transaction_date DESC, type)
+INCLUDE (transaction_id, amount, category_id);
+CREATE INDEX idx_transactions_ai_categorization
+ON transactions (user_id, is_auto_categorized, ai_category_confidence DESC)
+WHERE ai_category_confidence > 0.5;
+CREATE INDEX idx_transactions_user_month_category
+ON transactions (user_id, date_trunc('month', transaction_date), category_id)
+INCLUDE (amount, type);
+CREATE INDEX idx_transactions_user_transaction_date
+ON transactions (user_id, transaction_date DESC);

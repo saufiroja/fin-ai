@@ -58,7 +58,6 @@ func (t *transactionController) CreateTransaction(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(responses.Response{
 		Status:  fiber.StatusCreated,
 		Message: "Transaction created successfully",
-		Data:    req,
 	})
 }
 

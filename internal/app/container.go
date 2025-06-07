@@ -88,13 +88,13 @@ func (c *Container) initializeServices() *Services {
 		),
 		User:       services.NewUserService(c.Repositories.User, c.Dependencies.Logger),
 		LogMessage: logMessageService,
-		Chat: services.NewChatService(
-			c.Repositories.Chat,
-			c.Dependencies.Logger,
-			c.Dependencies.LLMClient,
-			c.Repositories.ModelRegistry,
-			logMessageService,
-		),
+		// Chat: services.NewChatService(
+		// 	c.Repositories.Chat,
+		// 	c.Dependencies.Logger,
+		// 	c.Dependencies.LLMClient,
+		// 	c.Repositories.ModelRegistry,
+		// 	logMessageService,
+		// ),
 		Transaction: services.NewTransactionService(
 			c.Repositories.Transaction,
 			c.Dependencies.Logger,

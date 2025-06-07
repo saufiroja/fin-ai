@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/packages/param"
+	"github.com/saufiroja/fin-ai/internal/constants/prompt"
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains/transaction"
@@ -97,14 +101,119 @@ func (t *transactionService) GetTransactionsStats() (*models.Transaction, error)
 func (t *transactionService) InsertTransaction(req *requests.TransactionRequest) error {
 	t.logging.LogInfo(fmt.Sprintf("Inserting transaction: %+v", req))
 
-	input := openai.EmbeddingNewParamsInputUnion{
-		OfString: param.NewOpt(req.Description), // deskripsi transaksi sebagai input embedding
+	// Use channels to communicate between goroutines
+	embeddingChan := make(chan *responses.ResponseEmbedding)
+	confidenceChan := make(chan float64)
+	errorChan := make(chan error, 2) // Buffer for 2 possible errors
+
+	// Start embedding creation in a goroutine
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				t.logging.LogError(fmt.Sprintf("Panic in embedding goroutine: %v", r))
+				errorChan <- fmt.Errorf("embedding creation failed: %v", r)
+			}
+		}()
+
+		input := openai.EmbeddingNewParamsInputUnion{
+			OfString: param.NewOpt(req.Description), // deskripsi transaksi sebagai input embedding
+		}
+
+		t.logging.LogInfo("Starting to create embedding for transaction description")
+		embedding := t.openaiClient.CreateEmbedding(context.Background(), input)
+
+		if embedding != nil && embedding.Embeddings != "" {
+			embeddingChan <- embedding
+		} else {
+			errorChan <- fmt.Errorf("failed to create embedding")
+		}
+	}()
+
+	// Start AI confidence calculation in a goroutine (only if auto-categorized)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				t.logging.LogError(fmt.Sprintf("Panic in confidence goroutine: %v", r))
+				confidenceChan <- 0.0 // Default confidence on panic
+			}
+		}()
+
+		if !req.IsAutoCategorized {
+			confidenceChan <- 0.0
+			return
+		}
+
+		messagePrompt := []openai.ChatCompletionMessageParamUnion{
+			{OfSystem: &openai.ChatCompletionSystemMessageParam{
+				Name: param.Opt[string]{Value: "system"},
+				Content: openai.ChatCompletionSystemMessageParamContentUnion{
+					OfString: param.NewOpt(prompt.TransactionConfidenceSystemPrompt),
+				},
+			},
+			},
+			{OfUser: &openai.ChatCompletionUserMessageParam{
+				Name: param.Opt[string]{Value: "user"},
+				Content: openai.ChatCompletionUserMessageParamContentUnion{
+					OfString: param.NewOpt(fmt.Sprintf(prompt.TransactionConfidenceUserPromptTemplate, req.CategoryId, req.Description)),
+				},
+			},
+			},
+		}
+
+		t.logging.LogInfo("Starting to get AI confidence score")
+		responseAi, err := t.openaiClient.SendChat(context.Background(), "gpt-4o-mini", messagePrompt)
+		if err != nil {
+			t.logging.LogError(fmt.Sprintf("Error creating chat completion for confidence: %v", err))
+			confidenceChan <- 0.0 // Default confidence on error
+		} else {
+			// Parse the AI response to extract confidence score
+			if responseStr, ok := responseAi.Response.(string); ok && len(responseStr) > 0 {
+				if confidence, parseErr := t.parseConfidenceFromResponse(responseStr); parseErr == nil {
+					confidenceChan <- confidence
+				} else {
+					t.logging.LogWarn(fmt.Sprintf("Failed to parse AI confidence response: %v", parseErr))
+					confidenceChan <- 0.0
+				}
+			} else {
+				confidenceChan <- 0.0
+			}
+		}
+	}()
+
+	// Prepare other transaction data concurrently
+	var wg sync.WaitGroup
+	var transactionId string
+	var timestamp time.Time
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		transactionId = ulid.Make().String()
+		timestamp = time.Now()
+	}()
+
+	// Wait for other preparations
+	wg.Wait()
+
+	// Wait for both embedding and confidence results
+	var embedding *responses.ResponseEmbedding
+	var aiCategoryConfidence float64
+
+	// Collect results from both goroutines
+	for i := 0; i < 2; i++ {
+		select {
+		case emb := <-embeddingChan:
+			embedding = emb
+		case conf := <-confidenceChan:
+			aiCategoryConfidence = conf
+		case err := <-errorChan:
+			t.logging.LogError(fmt.Sprintf("Error in concurrent operations: %v", err))
+			return fmt.Errorf("failed to process transaction: %w", err)
+		}
 	}
-	// create embedding if not provided
-	embedding := t.openaiClient.CreateEmbedding(context.Background(), input)
 
 	transaction := &models.Transaction{
-		TransactionId:        ulid.Make().String(),
+		TransactionId:        transactionId,
 		UserId:               req.UserId,
 		CategoryId:           req.CategoryId,
 		Type:                 req.Type,
@@ -112,11 +221,11 @@ func (t *transactionService) InsertTransaction(req *requests.TransactionRequest)
 		DescriptionEmbedding: embedding.Embeddings,
 		Amount:               req.Amount,
 		Source:               req.Source,
-		TransactionDate:      req.TransactionDate,
-		AiCategoryConfidence: req.AiCategoryConfidence,
+		TransactionDate:      timestamp, // Using prepared timestamp
+		AiCategoryConfidence: aiCategoryConfidence,
 		IsAutoCategorized:    req.IsAutoCategorized,
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
+		CreatedAt:            timestamp,
+		UpdatedAt:            timestamp,
 	}
 
 	err := t.transactionRepository.InsertTransaction(transaction)
@@ -125,7 +234,27 @@ func (t *transactionService) InsertTransaction(req *requests.TransactionRequest)
 		return err
 	}
 
+	t.logging.LogInfo(fmt.Sprintf("Transaction inserted successfully with ID: %s, AI confidence: %.2f", transaction.TransactionId, aiCategoryConfidence))
 	return nil
+}
+
+// Helper function to parse confidence from AI response
+func (t *transactionService) parseConfidenceFromResponse(response string) (float64, error) {
+	// Remove any whitespace and parse as float
+	response = strings.TrimSpace(response)
+	confidence, err := strconv.ParseFloat(response, 64)
+	if err != nil {
+		return 0.0, fmt.Errorf("failed to parse confidence: %v", err)
+	}
+
+	// Ensure confidence is within valid range
+	if confidence < 0.0 {
+		confidence = 0.0
+	} else if confidence > 1.0 {
+		confidence = 1.0
+	}
+
+	return confidence, nil
 }
 
 // UpdateTransaction implements transaction.TransactionManager.

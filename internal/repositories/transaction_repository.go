@@ -73,9 +73,9 @@ func (t *transactionRepository) InsertTransaction(transaction *models.Transactio
     user_id, 
     category_id,
     type,
-    amount,
     description,
     description_embedding,
+    amount,
     source,
     transaction_date,
     ai_category_confidence,
@@ -83,16 +83,18 @@ func (t *transactionRepository) InsertTransaction(transaction *models.Transactio
     created_at,
     updated_at
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+    VALUES (
+		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+	)
 `
 	_, err := db.Exec(query,
 		transaction.TransactionId,
 		transaction.UserId,
 		transaction.CategoryId,
 		transaction.Type,
-		transaction.Amount,
 		transaction.Description,
 		transaction.DescriptionEmbedding,
+		transaction.Amount,
 		transaction.Source,
 		transaction.TransactionDate,
 		transaction.AiCategoryConfidence,

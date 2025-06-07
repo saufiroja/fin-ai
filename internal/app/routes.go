@@ -71,7 +71,7 @@ func (r *Routes) setupTransactionRoutes() {
 	transactionGroup := globalApi.Group("/transactions")
 
 	transactionGroup.Post("/",
-		// r.container.Dependencies.AuthMiddleware,
+		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.CreateTransaction)
 
 	transactionGroup.Get("/",

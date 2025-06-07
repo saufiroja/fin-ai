@@ -14,9 +14,9 @@ type Pagination struct {
 }
 
 type ResponseAI struct {
-	Response    string `json:"response"`
-	InputToken  int    `json:"input_token"`
-	OutputToken int    `json:"output_token"`
+	Response    any `json:"response"`
+	InputToken  int `json:"input_token"`
+	OutputToken int `json:"output_token"`
 }
 
 type ResponseEmbedding struct {
