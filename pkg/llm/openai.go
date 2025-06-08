@@ -40,9 +40,24 @@ func NewOpenAI(conf *config.AppConfig) OpenAI {
 }
 
 func (o *OpenAIClient) SendChat(ctx context.Context, modelName string, messages []openai.ChatCompletionMessageParamUnion) (*responses.ResponseAI, error) {
+	// Enhanced parameters for better accuracy
+	var model openai.ChatModel
+	switch modelName {
+	case "gpt-4o":
+		model = openai.ChatModelGPT4o
+	case "gpt-4o-mini":
+		model = openai.ChatModelGPT4oMini
+	default:
+		model = openai.ChatModelGPT4o // Default to GPT-4o for better accuracy
+	}
+
 	resp, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Model:    modelName,
-		Messages: messages,
+		Model:       model,
+		Messages:    messages,
+		Temperature: openai.Float(0.0), // Zero temperature for maximum consistency
+		MaxTokens:   openai.Int(4000),  // Optimized for receipt data
+		Seed:        openai.Int(12345), // Fixed seed for reproducible results
+		TopP:        openai.Float(0.1), // Low top_p for more focused responses
 	})
 	if err != nil {
 		return nil, err

@@ -23,6 +23,7 @@ func (r *Routes) Setup() {
 	r.setupChatRoutes()
 	r.setupTransactionRoutes()
 	r.setupCategoryRoutes()
+	r.setupReceiptRoutes()
 }
 
 func (r *Routes) setupHealthCheck() {
@@ -111,5 +112,13 @@ func (r *Routes) setupCategoryRoutes() {
 	categoryGroup.Delete("/:category_id",
 		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Category.DeleteCategoryById)
+}
 
+func (r *Routes) setupReceiptRoutes() {
+	globalApi := r.app.Group("/api/v1")
+	receiptGroup := globalApi.Group("/receipts")
+
+	receiptGroup.Post("/upload",
+		r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Receipt.UploadReceipt)
 }

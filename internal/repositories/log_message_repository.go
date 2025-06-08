@@ -16,7 +16,7 @@ func NewLogMessageRepository(db databases.PostgresManager) log_message.LogMessag
 	}
 }
 
-func (r *logMessageRepository) InsertLogMessage(logMessage *models.LogMessageModel) error {
+func (r *logMessageRepository) InsertLogMessage(logMessage *models.LogMessage) error {
 	db := r.DB.Connection()
 
 	query := `INSERT INTO log_messages (log_messages_id, user_id, message, response, input_token, output_token, topic, model, created_at, updated_at)

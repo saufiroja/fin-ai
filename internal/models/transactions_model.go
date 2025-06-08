@@ -20,4 +20,5 @@ type Transaction struct {
 	IsAutoCategorized    bool                   `json:"is_auto_categorized"`    // the transaction was auto-categorized by AI
 	CreatedAt            time.Time              `json:"created_at"`
 	UpdatedAt            time.Time              `json:"updated_at"`
+	Confirmed            bool                   `json:"confirmed"` // whether the transaction is confirmed by the user
 }

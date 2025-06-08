@@ -206,13 +206,11 @@ func (t *transactionService) InsertTransaction(req *requests.TransactionRequest)
 
 	// Prepare other transaction data concurrently
 	var wg sync.WaitGroup
-	var transactionId string
 	var timestamp time.Time
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		transactionId = ulid.Make().String()
 		timestamp = time.Now()
 	}()
 
@@ -237,7 +235,7 @@ func (t *transactionService) InsertTransaction(req *requests.TransactionRequest)
 	}
 
 	transaction := &models.Transaction{
-		TransactionId:        transactionId,
+		TransactionId:        ulid.Make().String(),
 		UserId:               req.UserId,
 		CategoryId:           req.CategoryId,
 		Type:                 req.Type,
@@ -250,6 +248,7 @@ func (t *transactionService) InsertTransaction(req *requests.TransactionRequest)
 		IsAutoCategorized:    req.IsAutoCategorized,
 		CreatedAt:            timestamp,
 		UpdatedAt:            timestamp,
+		Confirmed:            req.Confirmed, // Default to true for new transactions
 	}
 
 	err := t.transactionRepository.InsertTransaction(transaction)

@@ -81,10 +81,11 @@ func (t *transactionRepository) InsertTransaction(transaction *models.Transactio
     ai_category_confidence,
     is_auto_categorized,
     created_at,
-    updated_at
+    updated_at,
+	confirmed
     )
     VALUES (
-		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 	)
 `
 	_, err := db.Exec(query,
@@ -101,6 +102,7 @@ func (t *transactionRepository) InsertTransaction(transaction *models.Transactio
 		transaction.IsAutoCategorized,
 		transaction.CreatedAt,
 		transaction.UpdatedAt,
+		transaction.Confirmed, // Assuming Confirmed field is added to the Transaction model
 	)
 
 	return err

@@ -1,17 +1,25 @@
 package requests
 
 import (
+	"time"
+
 	"github.com/saufiroja/fin-ai/internal/constants"
 )
 
 type TransactionRequest struct {
-	UserId            string                 `json:"user_id"`
-	CategoryId        string                 `json:"category_id"`
-	Type              constants.TypeCategory `json:"type"`
-	Description       string                 `json:"description"`
-	Amount            int64                  `json:"amount"`
-	Source            string                 `json:"source"`
-	IsAutoCategorized bool                   `json:"is_auto_categorized"`
+	TransactionId        string                 `json:"-"`
+	UserId               string                 `json:"user_id"`
+	CategoryId           string                 `json:"category_id"`
+	Type                 constants.TypeCategory `json:"type"`
+	Description          string                 `json:"description"`
+	Amount               int64                  `json:"amount"`
+	Source               string                 `json:"source"`
+	IsAutoCategorized    bool                   `json:"is_auto_categorized"`
+	TransactionDate      time.Time              `json:"-"`
+	AiCategoryConfidence float64                `json:"-"`
+	CreatedAt            time.Time              `json:"-"`
+	UpdatedAt            time.Time              `json:"-"`
+	Confirmed            bool                   `json:"confirmed"` // whether the transaction is confirmed by the user
 }
 
 type UpdateTransactionRequest struct {

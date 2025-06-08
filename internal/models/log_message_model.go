@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type LogMessageModel struct {
+type LogMessage struct {
 	LogMessageId string    `json:"log_message_id"`
 	UserId       string    `json:"user_id"`
 	Message      string    `json:"message"`

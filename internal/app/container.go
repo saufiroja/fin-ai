@@ -73,38 +73,55 @@ func (c *Container) initializeRepositories() *Repositories {
 		LogMessage:    repositories.NewLogMessageRepository(c.Dependencies.Postgres),
 		Transaction:   repositories.NewTransactionRepository(c.Dependencies.Postgres),
 		Category:      repositories.NewCategoryRepository(c.Dependencies.Postgres),
+		Receipt:       repositories.NewReceiptRepository(c.Dependencies.Postgres),
 	}
 }
 
 func (c *Container) initializeServices() *Services {
+	authService := services.NewAuthService(
+		c.Repositories.User,
+		c.Dependencies.Logger,
+		c.Dependencies.TokenGen,
+		c.Dependencies.Config,
+	)
+	userService := services.NewUserService(c.Repositories.User, c.Dependencies.Logger)
 	logMessageService := services.NewLogMessageService(c.Repositories.LogMessage, c.Dependencies.Logger)
+	transactionService := services.NewTransactionService(
+		c.Repositories.Transaction,
+		c.Dependencies.Logger,
+		c.Dependencies.LLMClient,
+	)
+	// Uncomment the following line if you have a Chat service
+	// chatService := services.NewChatService(
+	// 	c.Repositories.Chat,
+	// 	c.Dependencies.Logger,
+	// 	c.Dependencies.LLMClient,
+	// 	c.Repositories.ModelRegistry,
+	// 	c.Repositories.LogMessage,
+	// )
+	categoryService := services.NewCategoryService(
+		c.Repositories.Category,
+		c.Dependencies.Logger,
+		c.Dependencies.LLMClient,
+	)
+	receiptService := services.NewReceiptService(
+		c.Repositories.Receipt,
+		transactionService,
+		logMessageService,
+		categoryService,
+		c.Dependencies.MinioClient,
+		c.Dependencies.Logger,
+		c.Dependencies.LLMClient,
+	)
 
 	return &Services{
-		Auth: services.NewAuthService(
-			c.Repositories.User,
-			c.Dependencies.Logger,
-			c.Dependencies.TokenGen,
-			c.Dependencies.Config,
-		),
-		User:       services.NewUserService(c.Repositories.User, c.Dependencies.Logger),
+		Auth:       authService,
+		User:       userService,
 		LogMessage: logMessageService,
-		// Chat: services.NewChatService(
-		// 	c.Repositories.Chat,
-		// 	c.Dependencies.Logger,
-		// 	c.Dependencies.LLMClient,
-		// 	c.Repositories.ModelRegistry,
-		// 	logMessageService,
-		// ),
-		Transaction: services.NewTransactionService(
-			c.Repositories.Transaction,
-			c.Dependencies.Logger,
-			c.Dependencies.LLMClient,
-		),
-		Category: services.NewCategoryService(
-			c.Repositories.Category,
-			c.Dependencies.Logger,
-			c.Dependencies.LLMClient,
-		),
+		// Chat: chatService,
+		Transaction: transactionService,
+		Category:    categoryService,
+		Receipt:     receiptService,
 	}
 }
 
@@ -115,6 +132,7 @@ func (c *Container) initializeControllers() *Controllers {
 		Chat:        controllers.NewChatController(c.Services.Chat, c.Dependencies.Validator),
 		Transaction: controllers.NewTransactionController(c.Services.Transaction),
 		Category:    controllers.NewCategoryController(c.Services.Category),
+		Receipt:     controllers.NewReceiptController(c.Services.Receipt),
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/saufiroja/fin-ai/internal/domains/chat"
 	"github.com/saufiroja/fin-ai/internal/domains/log_message"
 	"github.com/saufiroja/fin-ai/internal/domains/model_registry"
+	"github.com/saufiroja/fin-ai/internal/domains/receipt"
 	"github.com/saufiroja/fin-ai/internal/domains/transaction"
 	"github.com/saufiroja/fin-ai/internal/domains/user"
 	"github.com/saufiroja/fin-ai/internal/utils"
@@ -23,7 +24,7 @@ type Dependencies struct {
 	Config         *config.AppConfig
 	Postgres       databases.PostgresManager
 	Redis          *redis.RedisClient
-	MinioClient    *minio.MinioClient
+	MinioClient    minio.MinioManager
 	LLMClient      llm.OpenAI
 	Validator      utils.Validator
 	TokenGen       utils.TokenGenerator
@@ -37,6 +38,7 @@ type Repositories struct {
 	LogMessage    log_message.LogMessageStorer
 	Transaction   transaction.TransactionStorer
 	Category      categories.CategoryStorer
+	Receipt       receipt.ReceiptStorer
 }
 
 type Services struct {
@@ -46,6 +48,7 @@ type Services struct {
 	LogMessage  log_message.LogMessageManager
 	Transaction transaction.TransactionManager
 	Category    categories.CategoryManager
+	Receipt     receipt.ReceiptManager
 }
 
 type Controllers struct {
@@ -54,4 +57,5 @@ type Controllers struct {
 	Chat        chat.ChatController
 	Transaction transaction.TransactionController
 	Category    categories.CategoryController
+	Receipt     receipt.ReceiptController
 }

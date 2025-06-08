@@ -21,8 +21,8 @@ func NewLogMessageService(
 	}
 }
 
-func (s *logMessageService) InsertLogMessage(logMessage *models.LogMessageModel) error {
-	s.logging.LogInfo("inserting log message: " + logMessage.Message)
+func (s *logMessageService) InsertLogMessage(logMessage *models.LogMessage) error {
+	s.logging.LogInfo("inserting log message: " + logMessage.Topic)
 	err := s.logMessageRepository.InsertLogMessage(logMessage)
 	if err != nil {
 		s.logging.LogError("failed to insert log message: " + err.Error())
