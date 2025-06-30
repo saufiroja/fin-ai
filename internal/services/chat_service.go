@@ -187,37 +187,57 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 
 	s.logging.LogInfo(fmt.Sprintf("Processing chat message in %s mode for session: %s", req.Mode, req.ChatSessionId))
 
-	// Validate the mode
-	if err := s.validateMode(req.Mode); err != nil {
-		s.logging.LogError(fmt.Sprintf("Invalid mode: %s", err.Error()))
-		return nil, err
-	}
+	var responseAi *models.ChatMessage
 
-	// Get appropriate system prompt based on mode
-	systemPrompt := s.getSystemPromptByMode(req.Mode)
+	// Handle different modes
+	switch req.Mode {
+	case models.ModeAgent:
+		// Use RunAgent for agent mode
+		s.logging.LogInfo("Using RunAgent for agent mode")
+		response, err := s.geminiClient.RunAgent(ctx, req.Message)
+		if err != nil {
+			s.logging.LogError(fmt.Sprintf("Failed to run Gemini agent: %s", err.Error()))
+			return nil, fmt.Errorf("failed to run Gemini agent: %w", err)
+		}
 
-	partsAi := []*genai.Part{
-		genai.NewPartFromText(systemPrompt),
-	}
-	parts := []*genai.Part{
-		genai.NewPartFromText(req.Message),
-	}
+		responseAi = &models.ChatMessage{
+			ChatSessionId: req.ChatSessionId,
+			ChatMessageId: "",
+			Message:       response.Response.(string),
+		}
 
-	message := []*genai.Content{
-		genai.NewContentFromParts(partsAi, genai.RoleModel),
-		genai.NewContentFromParts(parts, genai.RoleUser),
-	}
+	case models.ModeChat:
+		fallthrough
+	default:
+		// Use regular Run for chat mode
+		s.logging.LogInfo("Using Run for chat mode")
 
-	response, err := s.geminiClient.Run(ctx, "gemini-2.5-flash", message)
-	if err != nil {
-		s.logging.LogError(fmt.Sprintf("Failed to run Gemini client: %s", err.Error()))
-		return nil, fmt.Errorf("failed to run Gemini client: %w", err)
-	}
+		// Get appropriate system prompt based on mode
+		systemPrompt := s.getSystemPromptByMode(req.Mode)
 
-	responseAi := &models.ChatMessage{
-		ChatSessionId: req.ChatSessionId,
-		ChatMessageId: "",
-		Message:       response.Response.(string),
+		partsAi := []*genai.Part{
+			genai.NewPartFromText(systemPrompt),
+		}
+		parts := []*genai.Part{
+			genai.NewPartFromText(req.Message),
+		}
+
+		message := []*genai.Content{
+			genai.NewContentFromParts(partsAi, genai.RoleModel),
+			genai.NewContentFromParts(parts, genai.RoleUser),
+		}
+
+		response, err := s.geminiClient.Run(ctx, "gemini-2.5-flash", message)
+		if err != nil {
+			s.logging.LogError(fmt.Sprintf("Failed to run Gemini client: %s", err.Error()))
+			return nil, fmt.Errorf("failed to run Gemini client: %w", err)
+		}
+
+		responseAi = &models.ChatMessage{
+			ChatSessionId: req.ChatSessionId,
+			ChatMessageId: "",
+			Message:       response.Response.(string),
+		}
 	}
 
 	s.logging.LogInfo("Chat message processed successfully")
