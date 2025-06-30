@@ -8,9 +8,11 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/saufiroja/fin-ai/internal/constants/prompt"
+	"github.com/saufiroja/fin-ai/internal/domains/categories"
 	"github.com/saufiroja/fin-ai/internal/domains/chat"
 	"github.com/saufiroja/fin-ai/internal/domains/log_message"
 	"github.com/saufiroja/fin-ai/internal/domains/model_registry"
+	"github.com/saufiroja/fin-ai/internal/domains/transaction"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/llm"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
@@ -18,11 +20,13 @@ import (
 )
 
 type chatService struct {
-	chatRepository    chat.ChatStorer
-	logging           logging.Logger
-	geminiClient      llm.Gemini
-	modelRegistry     model_registry.ModelRegistryStorer
-	logMessageService log_message.LogMessageManager
+	chatRepository     chat.ChatStorer
+	logging            logging.Logger
+	geminiClient       llm.Gemini
+	modelRegistry      model_registry.ModelRegistryStorer
+	logMessageService  log_message.LogMessageManager
+	transactionService transaction.TransactionManager
+	categoryService    categories.CategoryManager
 }
 
 func NewChatService(
@@ -31,13 +35,22 @@ func NewChatService(
 	geminiClient llm.Gemini,
 	modelRegistry model_registry.ModelRegistryStorer,
 	logMessageService log_message.LogMessageManager,
+	transactionService transaction.TransactionManager,
+	categoryService categories.CategoryManager,
 ) chat.ChatManager {
+	// Set transaction service to gemini client
+	geminiClient.SetTransactionService(transactionService)
+	// Set category service to gemini client
+	geminiClient.SetCategoryService(categoryService)
+
 	return &chatService{
-		chatRepository:    chatRepository,
-		logging:           logging,
-		geminiClient:      geminiClient,
-		modelRegistry:     modelRegistry,
-		logMessageService: logMessageService,
+		chatRepository:     chatRepository,
+		logging:            logging,
+		geminiClient:       geminiClient,
+		modelRegistry:      modelRegistry,
+		logMessageService:  logMessageService,
+		transactionService: transactionService,
+		categoryService:    categoryService,
 	}
 }
 
@@ -194,7 +207,7 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 	case models.ModeAgent:
 		// Use RunAgent for agent mode
 		s.logging.LogInfo("Using RunAgent for agent mode")
-		response, err := s.geminiClient.RunAgent(ctx, req.Message)
+		response, err := s.geminiClient.RunAgent(ctx, req.Message, req.UserId)
 		if err != nil {
 			s.logging.LogError(fmt.Sprintf("Failed to run Gemini agent: %s", err.Error()))
 			return nil, fmt.Errorf("failed to run Gemini agent: %w", err)
