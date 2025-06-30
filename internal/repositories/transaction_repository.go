@@ -17,7 +17,7 @@ func NewTransactionRepository(db databases.PostgresManager) transaction.Transact
 	}
 }
 
-func (t *transactionRepository) GetAllTransactions(req *requests.GetAllTransactionsQuery) ([]models.Transaction, error) {
+func (t *transactionRepository) GetAllTransactions(req *requests.GetAllTransactionsQuery, userId string) ([]models.Transaction, error) {
 	db := t.DB.Connection()
 
 	query := `
@@ -28,10 +28,11 @@ func (t *transactionRepository) GetAllTransactions(req *requests.GetAllTransacti
         FROM transactions
         WHERE ($1 = '' OR category_id = $1)
         AND ($2 = '' OR LOWER(description) LIKE LOWER('%' || $2 || '%'))
+		AND user_id = $5
         ORDER BY transaction_date DESC
         LIMIT $3 OFFSET $4`
 
-	rows, err := db.Query(query, req.Category, req.Search, req.Limit, req.Offset)
+	rows, err := db.Query(query, req.Category, req.Search, req.Limit, req.Offset, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -209,17 +210,18 @@ func (t *transactionRepository) DeleteTransaction(id string) error {
 	return err
 }
 
-func (t *transactionRepository) CountAllTransactions(req *requests.GetAllTransactionsQuery) (int64, error) {
+func (t *transactionRepository) CountAllTransactions(req *requests.GetAllTransactionsQuery, userId string) (int64, error) {
 	db := t.DB.Connection()
 
 	query := `
         SELECT COUNT(*)
         FROM transactions
         WHERE ($1 = '' OR category_id = $1)
-        AND ($2 = '' OR LOWER(description) LIKE LOWER('%' || $2 || '%'))`
+        AND ($2 = '' OR LOWER(description) LIKE LOWER('%' || $2 || '%'))
+		AND user_id = $3`
 
 	var count int64
-	err := db.QueryRow(query, req.Category, req.Search).Scan(&count)
+	err := db.QueryRow(query, req.Category, req.Search, userId).Scan(&count)
 	if err != nil {
 		return 0, err
 	}

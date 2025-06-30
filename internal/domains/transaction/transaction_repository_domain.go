@@ -10,6 +10,6 @@ type TransactionStorer interface {
 	GetTransactionByID(id string) (*models.Transaction, error)
 	UpdateTransaction(transaction *models.Transaction) error
 	DeleteTransaction(id string) error
-	GetAllTransactions(*requests.GetAllTransactionsQuery) ([]models.Transaction, error)
-	CountAllTransactions(*requests.GetAllTransactionsQuery) (int64, error)
+	GetAllTransactions(req *requests.GetAllTransactionsQuery, userId string) ([]models.Transaction, error)
+	CountAllTransactions(req *requests.GetAllTransactionsQuery, userId string) (int64, error)
 }

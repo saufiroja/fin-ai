@@ -99,15 +99,6 @@ func (c *Container) initializeServices() *Services {
 		c.Dependencies.OpenAIClient,
 	)
 	// Uncomment the following line if you have a Chat service
-	chatService := services.NewChatService(
-		c.Repositories.Chat,
-		c.Dependencies.Logger,
-		c.Dependencies.GeminiClient,
-		c.Repositories.ModelRegistry,
-		c.Repositories.LogMessage,
-		transactionService,
-		categoryService,
-	)
 	receiptService := services.NewReceiptService(
 		c.Repositories.Receipt,
 		transactionService,
@@ -117,6 +108,17 @@ func (c *Container) initializeServices() *Services {
 		c.Dependencies.Logger,
 		c.Dependencies.OpenAIClient,
 		c.Dependencies.GeminiClient,
+	)
+	chatService := services.NewChatService(
+		c.Repositories.Chat,
+		c.Dependencies.Logger,
+		c.Dependencies.GeminiClient,
+		c.Dependencies.OpenAIClient,
+		c.Repositories.ModelRegistry,
+		c.Repositories.LogMessage,
+		transactionService,
+		categoryService,
+		receiptService,
 	)
 
 	return &Services{

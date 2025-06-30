@@ -18,6 +18,7 @@ func NewTransactionController(transactionService transaction.TransactionManager)
 }
 
 func (t *transactionController) GetAllTransactions(ctx *fiber.Ctx) error {
+	userId := ctx.Locals("user_id").(string) // Assuming user_id is set in context
 	transactionQuery := &requests.GetAllTransactionsQuery{
 		Limit:    10, // Default limit
 		Offset:   1,  // Default offset
@@ -25,7 +26,7 @@ func (t *transactionController) GetAllTransactions(ctx *fiber.Ctx) error {
 		Search:   "",
 	}
 
-	transactions, err := t.transactionService.GetAllTransactions(transactionQuery)
+	transactions, err := t.transactionService.GetAllTransactions(transactionQuery, userId)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(responses.Response{
 			Status:  fiber.StatusInternalServerError,

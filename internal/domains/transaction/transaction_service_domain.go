@@ -10,7 +10,7 @@ type TransactionManager interface {
 	InsertTransaction(req *requests.TransactionRequest) error
 	UpdateTransaction(transactionId string, req *requests.UpdateTransactionRequest) error
 	DeleteTransaction(id string) error
-	GetAllTransactions(*requests.GetAllTransactionsQuery) (*responses.GetAllTransactionsResponse, error)
+	GetAllTransactions(req *requests.GetAllTransactionsQuery, userId string) (*responses.GetAllTransactionsResponse, error)
 	GetTransactionsStats() (*models.Transaction, error)
 	GetDetailedTransaction(id string) (*models.Transaction, error)
 }

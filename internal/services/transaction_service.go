@@ -39,7 +39,7 @@ func NewTransactionService(
 	}
 }
 
-func (t *transactionService) GetAllTransactions(req *requests.GetAllTransactionsQuery) (*responses.GetAllTransactionsResponse, error) {
+func (t *transactionService) GetAllTransactions(req *requests.GetAllTransactionsQuery, userId string) (*responses.GetAllTransactionsResponse, error) {
 	t.logging.LogInfo(fmt.Sprintf("Fetching all transactions with query: %+v", req))
 
 	// Calculate offset for pagination (convert page-based to offset-based)
@@ -56,14 +56,14 @@ func (t *transactionService) GetAllTransactions(req *requests.GetAllTransactions
 		Search:   req.Search,
 	}
 
-	transactions, err := t.transactionRepository.GetAllTransactions(queryReq)
+	transactions, err := t.transactionRepository.GetAllTransactions(queryReq, userId)
 	if err != nil {
 		t.logging.LogError(fmt.Sprintf("Error fetching transactions: %v", err))
 		return nil, err
 	}
 
 	// Use filtered count to get accurate count with the same filters
-	count, err := t.transactionRepository.CountAllTransactions(req)
+	count, err := t.transactionRepository.CountAllTransactions(req, userId)
 	if err != nil {
 		t.logging.LogError(fmt.Sprintf("Error counting transactions: %v", err))
 		return nil, err
