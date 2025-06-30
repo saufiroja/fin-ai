@@ -130,7 +130,7 @@ func (c *chatController) SendChatMessage(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(responses.Response{
 		Status:  fiber.StatusOK,
-		Message: "Chat message sent successfully",
+		Message: "Chat message send successfully",
 		Data:    response,
 	})
 }

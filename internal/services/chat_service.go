@@ -2,12 +2,14 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/saufiroja/fin-ai/internal/constants/prompt"
+	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains/categories"
 	"github.com/saufiroja/fin-ai/internal/domains/chat"
 	"github.com/saufiroja/fin-ai/internal/domains/log_message"
@@ -213,10 +215,17 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 			return nil, fmt.Errorf("failed to run Gemini agent: %w", err)
 		}
 
+		if err := s.logAIResponse(req.Message, response, req.UserId); err != nil {
+			return nil, fmt.Errorf("failed to log AI response: %w", err)
+		}
+
 		responseAi = &models.ChatMessage{
 			ChatSessionId: req.ChatSessionId,
-			ChatMessageId: "",
+			ChatMessageId: ulid.Make().String(),
 			Message:       response.Response.(string),
+			Sender:        models.ChatMessageSenderAssistant,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
 		}
 
 	case models.ModeChat:
@@ -248,11 +257,44 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 
 		responseAi = &models.ChatMessage{
 			ChatSessionId: req.ChatSessionId,
-			ChatMessageId: "",
+			ChatMessageId: ulid.Make().String(),
 			Message:       response.Response.(string),
+			Sender:        models.ChatMessageSenderAssistant,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
 		}
 	}
 
 	s.logging.LogInfo("Chat message processed successfully")
 	return responseAi, nil
+}
+
+func (c *chatService) logAIResponse(responseString string, responseAi *responses.ResponseAI, userId string) error {
+	messagePromptJSON, err := json.Marshal(responseString)
+	if err != nil {
+		c.logging.LogError(fmt.Sprintf("Failed to marshal message prompt: %v", err))
+		return fmt.Errorf("failed to marshal message prompt: %w", err)
+	}
+
+	dateNow := time.Now()
+	logMessage := &models.LogMessage{
+		LogMessageId: ulid.Make().String(),
+		UserId:       userId,
+		Message:      string(messagePromptJSON),
+		Response:     responseString,
+		InputToken:   responseAi.InputToken,
+		OutputToken:  responseAi.OutputToken,
+		Topic:        "agent chat",
+		Model:        "gemini-2.5-flash",
+		CreatedAt:    dateNow,
+		UpdatedAt:    dateNow,
+	}
+
+	err = c.logMessageService.InsertLogMessage(logMessage)
+	if err != nil {
+		c.logging.LogError(fmt.Sprintf("Failed to insert log message: %v", err))
+		return fmt.Errorf("failed to insert log message: %w", err)
+	}
+
+	return nil
 }
