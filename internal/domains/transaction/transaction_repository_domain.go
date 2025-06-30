@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
+	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/models"
 )
 
@@ -12,4 +13,5 @@ type TransactionStorer interface {
 	DeleteTransaction(id string) error
 	GetAllTransactions(req *requests.GetAllTransactionsQuery, userId string) ([]models.Transaction, error)
 	CountAllTransactions(req *requests.GetAllTransactionsQuery, userId string) (int64, error)
+	GetTransactionsStats(userId string, req *requests.OverviewTransactionsQuery) (*responses.OverviewTransactions, error)
 }

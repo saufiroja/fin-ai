@@ -8,3 +8,14 @@ type GetAllTransactionsResponse struct {
 	Total        int64                `json:"total"`
 	Transactions []models.Transaction `json:"transactions"`
 }
+
+type OverviewTransactions struct {
+	TotalIncome  int64 `json:"total_income"`
+	TotalExpense int64 `json:"total_expense"`
+}
+
+type OverviewTransactionsResponse struct {
+	TotalIncome       string `json:"total_income"`
+	TotalExpense      string `json:"total_expense"`
+	TotalTransactions string `json:"total_transactions"`
+}

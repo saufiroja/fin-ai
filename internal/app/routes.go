@@ -74,26 +74,21 @@ func (r *Routes) setupTransactionRoutes() {
 	transactionGroup.Post("/",
 		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.CreateTransaction)
-
 	transactionGroup.Get("/",
 		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.GetAllTransactions)
-
+	transactionGroup.Get("/overviews",
+		r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Transaction.OverviewTransactions)
 	transactionGroup.Get("/:transaction_id",
 		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.GetDetailedTransaction)
-
 	transactionGroup.Put("/:transaction_id",
 		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.UpdateTransaction)
-
 	transactionGroup.Delete("/:transaction_id",
 		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Transaction.DeleteTransaction)
-
-	transactionGroup.Get("/stats",
-		r.container.Dependencies.AuthMiddleware,
-		r.container.Controllers.Transaction.GetTransactionsStats)
 }
 
 func (r *Routes) setupCategoryRoutes() {

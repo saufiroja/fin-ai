@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"github.com/saufiroja/fin-ai/internal/contracts/requests"
+	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains/transaction"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/databases"
@@ -24,15 +25,17 @@ func (t *transactionRepository) GetAllTransactions(req *requests.GetAllTransacti
         SELECT 
             transaction_id, user_id, category_id, type, amount, 
             description, description_embedding, source, transaction_date, 
-            ai_category_confidence, is_auto_categorized, created_at, updated_at
+            ai_category_confidence, is_auto_categorized, created_at, updated_at,
+            confirmed, discount
         FROM transactions
         WHERE ($1 = '' OR category_id = $1)
         AND ($2 = '' OR LOWER(description) LIKE LOWER('%' || $2 || '%'))
+		AND ($6 = '' OR transaction_date BETWEEN $6::date AND $7::date)
 		AND user_id = $5
         ORDER BY transaction_date DESC
         LIMIT $3 OFFSET $4`
 
-	rows, err := db.Query(query, req.Category, req.Search, req.Limit, req.Offset, userId)
+	rows, err := db.Query(query, req.Category, req.Search, req.Limit, req.Offset, userId, req.StartDate, req.EndDate)
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +58,8 @@ func (t *transactionRepository) GetAllTransactions(req *requests.GetAllTransacti
 			&transaction.IsAutoCategorized,
 			&transaction.CreatedAt,
 			&transaction.UpdatedAt,
+			&transaction.Confirmed,
+			&transaction.Discount,
 		)
 		if err != nil {
 			return nil, err
@@ -128,7 +133,9 @@ func (t *transactionRepository) GetTransactionByID(id string) (*models.Transacti
         ai_category_confidence, 
         is_auto_categorized, 
         created_at, 
-        updated_at
+        updated_at,
+        confirmed,
+        discount
     FROM transactions
     WHERE transaction_id = $1
 `
@@ -150,6 +157,8 @@ func (t *transactionRepository) GetTransactionByID(id string) (*models.Transacti
 		&transaction.IsAutoCategorized,
 		&transaction.CreatedAt,
 		&transaction.UpdatedAt,
+		&transaction.Confirmed,
+		&transaction.Discount,
 	)
 
 	if err != nil {
@@ -175,8 +184,10 @@ func (t *transactionRepository) UpdateTransaction(transaction *models.Transactio
         transaction_date = $8,
         ai_category_confidence = $9,
         is_auto_categorized = $10,
-        updated_at = $11
-    WHERE transaction_id = $12
+        updated_at = $11,
+        confirmed = $12,
+        discount = $13
+    WHERE transaction_id = $14
 `
 
 	_, err := db.Exec(query,
@@ -191,6 +202,8 @@ func (t *transactionRepository) UpdateTransaction(transaction *models.Transactio
 		transaction.AiCategoryConfidence,
 		transaction.IsAutoCategorized,
 		transaction.UpdatedAt,
+		transaction.Confirmed,
+		transaction.Discount,
 		transaction.TransactionId,
 	)
 
@@ -218,13 +231,41 @@ func (t *transactionRepository) CountAllTransactions(req *requests.GetAllTransac
         FROM transactions
         WHERE ($1 = '' OR category_id = $1)
         AND ($2 = '' OR LOWER(description) LIKE LOWER('%' || $2 || '%'))
-		AND user_id = $3`
+		AND user_id = $3
+		AND ($4 = '' OR transaction_date BETWEEN $4::date AND $5::date)`
 
 	var count int64
-	err := db.QueryRow(query, req.Category, req.Search, userId).Scan(&count)
+	err := db.QueryRow(query, req.Category, req.Search, userId, req.StartDate, req.EndDate).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
 
 	return count, nil
+}
+
+func (t *transactionRepository) GetTransactionsStats(userId string, req *requests.OverviewTransactionsQuery) (*responses.OverviewTransactions, error) {
+	db := t.DB.Connection()
+
+	query := `
+        SELECT 
+            COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
+            COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense
+        FROM transactions
+		WHERE user_id = $1
+        AND (NULLIF($2, '') IS NULL OR NULLIF($3, '') IS NULL OR transaction_date BETWEEN $2::date AND $3::date)
+    `
+
+	row := db.QueryRow(query, userId, req.StartDate, req.EndDate)
+
+	stats := &responses.OverviewTransactions{}
+	err := row.Scan(
+		&stats.TotalIncome,
+		&stats.TotalExpense,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
 }

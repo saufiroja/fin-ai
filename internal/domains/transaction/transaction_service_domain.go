@@ -13,4 +13,5 @@ type TransactionManager interface {
 	GetAllTransactions(req *requests.GetAllTransactionsQuery, userId string) (*responses.GetAllTransactionsResponse, error)
 	GetTransactionsStats() (*models.Transaction, error)
 	GetDetailedTransaction(id string) (*models.Transaction, error)
+	OverviewTransactions(userId string, req *requests.OverviewTransactionsQuery) (*responses.OverviewTransactionsResponse, error)
 }

@@ -8,5 +8,5 @@ type TransactionController interface {
 	GetDetailedTransaction(ctx *fiber.Ctx) error
 	UpdateTransaction(ctx *fiber.Ctx) error
 	DeleteTransaction(ctx *fiber.Ctx) error
-	GetTransactionsStats(ctx *fiber.Ctx) error
+	OverviewTransactions(ctx *fiber.Ctx) error
 }

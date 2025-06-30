@@ -36,8 +36,15 @@ type UpdateTransactionRequest struct {
 }
 
 type GetAllTransactionsQuery struct {
-	Limit    int    `query:"limit" validate:"omitempty,min=1,max=100"`
-	Offset   int    `query:"offset" validate:"omitempty,min=0"`
-	Category string `query:"category" validate:"omitempty"`
-	Search   string `query:"search" validate:"omitempty"`
+	Limit     int    `query:"limit" validate:"omitempty,min=1,max=100"`
+	Offset    int    `query:"offset" validate:"omitempty,min=0"`
+	Category  string `query:"category" validate:"omitempty"`
+	Search    string `query:"search" validate:"omitempty"`
+	StartDate string `query:"start_date" validate:"omitempty,datetime=2006-01-02"`
+	EndDate   string `query:"end_date" validate:"omitempty,datetime=2006-01-02"`
+}
+
+type OverviewTransactionsQuery struct {
+	StartDate string `query:"start_date" validate:"omitempty,datetime=2006-01-02"`
+	EndDate   string `query:"end_date" validate:"omitempty,datetime=2006-01-02"`
 }

@@ -19,6 +19,8 @@ import (
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/llm"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 type transactionService struct {
@@ -50,10 +52,12 @@ func (t *transactionService) GetAllTransactions(req *requests.GetAllTransactions
 
 	// Create query with proper offset
 	queryReq := &requests.GetAllTransactionsQuery{
-		Offset:   offset,
-		Limit:    req.Limit,
-		Category: req.Category,
-		Search:   req.Search,
+		Offset:    offset,
+		Limit:     req.Limit,
+		Category:  req.Category,
+		Search:    req.Search,
+		StartDate: req.StartDate,
+		EndDate:   req.EndDate,
 	}
 
 	transactions, err := t.transactionRepository.GetAllTransactions(queryReq, userId)
@@ -69,7 +73,7 @@ func (t *transactionService) GetAllTransactions(req *requests.GetAllTransactions
 		return nil, err
 	}
 
-	totalPages := math.Max(1, math.Ceil(float64(count)/float64(req.Limit)))
+	totalPages := math.Ceil(float64(count) / float64(req.Limit))
 	currentPage := math.Min(float64(req.Offset), float64(totalPages))
 
 	res := &responses.GetAllTransactionsResponse{
@@ -378,4 +382,28 @@ func (t *transactionService) UpdateTransaction(transactionId string, req *reques
 
 	t.logging.LogInfo(fmt.Sprintf("Transaction with ID %s updated successfully", transaction.TransactionId))
 	return nil
+}
+
+func (t *transactionService) OverviewTransactions(userId string, req *requests.OverviewTransactionsQuery) (*responses.OverviewTransactionsResponse, error) {
+	stats, err := t.transactionRepository.GetTransactionsStats(userId, req)
+	if err != nil {
+		t.logging.LogError(fmt.Sprintf("Error getting transaction stats: %v", err))
+		return nil, fmt.Errorf("failed to get transaction stats: %w", err)
+	}
+
+	res := &responses.OverviewTransactionsResponse{
+		TotalTransactions: t.formatToRupiah(stats.TotalIncome + stats.TotalExpense),
+		TotalIncome:       t.formatToRupiah(stats.TotalIncome),
+		TotalExpense:      t.formatToRupiah(stats.TotalExpense),
+	}
+
+	return res, nil
+}
+
+func (t *transactionService) formatToRupiah(amount int64) string {
+	// Create a printer for Indonesian locale
+	p := message.NewPrinter(language.Indonesian)
+
+	// Format the amount with thousand separators and add "Rp" prefix
+	return fmt.Sprintf("Rp %s", p.Sprintf("%d", amount))
 }
