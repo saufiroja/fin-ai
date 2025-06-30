@@ -437,3 +437,61 @@ func (s *receiptService) insertReceipt(receipt *models.Receipt) error {
 	s.logging.LogInfo("Receipt inserted successfully")
 	return nil
 }
+
+func (s *receiptService) GetReceiptsByUserId(userId string) ([]*models.Receipt, error) {
+	s.logging.LogInfo(fmt.Sprintf("Fetching all receipts for user %s", userId))
+
+	receipts, err := s.receiptRepository.GetReceiptsByUserId(userId)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to fetch receipts for user %s: %v", userId, err))
+		return nil, fmt.Errorf("failed to fetch receipts: %w", err)
+	}
+
+	s.logging.LogInfo(fmt.Sprintf("Fetched %d receipts for user %s", len(receipts), userId))
+	return receipts, nil
+}
+
+func (s *receiptService) GetDetailReceiptUserById(userId string, receiptId string) (*responses.DetailReceiptUserResponse, error) {
+	s.logging.LogInfo(fmt.Sprintf("Fetching detail receipt for user %s and receipt ID %s", userId, receiptId))
+
+	receipt, err := s.receiptRepository.GetDetailReceiptUserById(userId, receiptId)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to fetch detail receipt for user %s and receipt ID %s: %v", userId, receiptId, err))
+		return nil, fmt.Errorf("failed to fetch detail receipt: %w", err)
+	}
+
+	items, err := s.receiptRepository.GetReceiptItemsByReceiptId(receipt.ReceiptId)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to fetch receipt items for receipt ID %s: %v", receipt.ReceiptId, err))
+		return nil, fmt.Errorf("failed to fetch receipt items: %w", err)
+	}
+
+	detailResponse := &responses.DetailReceiptUserResponse{
+		ReceiptId:       receipt.ReceiptId,
+		UserId:          receipt.UserId,
+		MerchantName:    receipt.MerchantName,
+		SubTotal:        receipt.SubTotal,
+		TotalDiscount:   receipt.TotalDiscount,
+		TotalShopping:   receipt.TotalShopping,
+		TransactionDate: receipt.TransactionDate,
+		CreatedAt:       receipt.CreatedAt,
+		UpdatedAt:       receipt.UpdatedAt,
+		Items:           items,
+	}
+
+	s.logging.LogInfo(fmt.Sprintf("Fetched detail receipt for user %s and receipt ID %s successfully", userId, receiptId))
+	return detailResponse, nil
+}
+
+func (s *receiptService) UpdateReceiptConfirmed(receiptId string, confirmed bool) error {
+	s.logging.LogInfo(fmt.Sprintf("Updating receipt confirmation status for receipt ID %s to %t", receiptId, confirmed))
+
+	err := s.receiptRepository.UpdateReceiptConfirmed(receiptId, confirmed)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to update receipt confirmation status for receipt ID %s: %v", receiptId, err))
+		return fmt.Errorf("failed to update receipt confirmation status: %w", err)
+	}
+
+	s.logging.LogInfo(fmt.Sprintf("Receipt confirmation status for receipt ID %s updated successfully", receiptId))
+	return nil
+}

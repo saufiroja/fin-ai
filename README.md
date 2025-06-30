@@ -107,8 +107,7 @@ Database migration berjalan otomatis saat container aktif.
 | POST   | `/api/v1/receipts/upload`              | Upload receipt image    |
 | GET    | `/api/v1/receipts`                     | List user receipts      |
 | GET    | `/api/v1/receipts/:receipt_id`         | Get specific receipt    |
-| DELETE | `/api/v1/receipts/:receipt_id`         | Delete receipt          |
-| POST   | `/api/v1/receipts/:receipt_id/extract` | Re-extract receipt data |
+| DELETE | `/api/v1/receipts/:receipt_id`         | Delete receipt(TODO)    |
 | POST   | `/api/v1/receipts/:receipt_id/confirm` | Confirm receipt data    |
 
 ### 7. AI Chat

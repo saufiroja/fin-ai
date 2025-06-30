@@ -1,6 +1,10 @@
 package responses
 
-import "time"
+import (
+	"time"
+
+	"github.com/saufiroja/fin-ai/internal/models"
+)
 
 type ReceiptExtractionResponse struct {
 	ExtractedReceipt ExtractedReceiptResponse `json:"extracted_receipt"`
@@ -23,4 +27,17 @@ type ReceiptItemResponse struct {
 	ItemPriceTotal       int64   `json:"item_price_total"`
 	ItemDiscount         int64   `json:"item_discount"`
 	AiCategoryConfidence float64 `json:"ai_category_confidence"`
+}
+
+type DetailReceiptUserResponse struct {
+	ReceiptId       string                `json:"receipt_id"`
+	UserId          string                `json:"user_id"`
+	MerchantName    string                `json:"merchant_name"`
+	SubTotal        int64                 `json:"sub_total"`
+	TotalDiscount   int64                 `json:"total_discount"`
+	TotalShopping   int64                 `json:"total_shopping"`
+	TransactionDate time.Time             `json:"transaction_date"`
+	CreatedAt       time.Time             `json:"created_at"`
+	UpdatedAt       time.Time             `json:"updated_at"`
+	Items           []*models.ReceiptItem `json:"items"`
 }

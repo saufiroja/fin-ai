@@ -68,3 +68,131 @@ func (r *receiptRepository) InsertReceiptItem(receiptItem *models.ReceiptItem) e
 
 	return nil
 }
+
+func (r *receiptRepository) GetReceiptsByUserId(userId string) ([]*models.Receipt, error) {
+	db := r.DB.Connection()
+
+	query := `
+    SELECT 
+        receipt_id, 
+        user_id, 
+        merchant_name, 
+        sub_total, 
+        total_discount, 
+        total_shopping, 
+        metadata, 
+        extracted_receipt, 
+        extracted_receipt_embedding, 
+        confirmed, 
+        transaction_date, 
+        created_at, 
+        updated_at
+    FROM receipts
+    WHERE user_id = $1`
+
+	rows, err := db.Query(query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var receipts []*models.Receipt
+	for rows.Next() {
+		var receipt models.Receipt
+		if err := rows.Scan(&receipt.ReceiptId, &receipt.UserId, &receipt.MerchantName, &receipt.SubTotal, &receipt.TotalDiscount, &receipt.TotalShopping, &receipt.MetaData, &receipt.ExtractedReceipt, &receipt.ExtractedReceiptEmbedding, &receipt.Confirmed, &receipt.TransactionDate, &receipt.CreatedAt, &receipt.UpdatedAt); err != nil {
+			return nil, err
+		}
+		receipts = append(receipts, &receipt)
+	}
+
+	return receipts, nil
+}
+
+func (r *receiptRepository) GetDetailReceiptUserById(userId string, receiptId string) (*models.Receipt, error) {
+	db := r.DB.Connection()
+
+	query := `
+    SELECT 
+        r.receipt_id,
+        r.user_id,
+        r.merchant_name,
+        r.sub_total,
+        r.total_discount,
+        r.total_shopping,
+        r.confirmed,
+        r.transaction_date,
+        r.created_at,
+        r.updated_at        
+    FROM receipts r
+    WHERE r.user_id = $1 AND r.receipt_id = $2`
+
+	row := db.QueryRow(query, userId, receiptId)
+
+	var receipt models.Receipt
+	if err := row.Scan(
+		&receipt.ReceiptId,
+		&receipt.UserId,
+		&receipt.MerchantName,
+		&receipt.SubTotal,
+		&receipt.TotalDiscount,
+		&receipt.TotalShopping,
+		&receipt.Confirmed,
+		&receipt.TransactionDate,
+		&receipt.CreatedAt,
+		&receipt.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return &receipt, nil
+}
+
+func (r *receiptRepository) GetReceiptItemsByReceiptId(receiptId string) ([]*models.ReceiptItem, error) {
+	db := r.DB.Connection()
+	query := `
+    SELECT 
+        receipt_item_id, 
+        receipt_id, 
+        item_name, 
+        item_quantity, 
+        item_price, 
+        item_price_total, 
+        item_discount, 
+        created_at, 
+        updated_at
+    FROM receipt_items
+    WHERE receipt_id = $1`
+
+	rows, err := db.Query(query, receiptId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []*models.ReceiptItem
+	for rows.Next() {
+		var item models.ReceiptItem
+		if err := rows.Scan(&item.ReceiptItemId, &item.ReceiptId, &item.ItemName, &item.ItemQuantity, &item.ItemPrice, &item.ItemPriceTotal, &item.ItemDiscount, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, &item)
+	}
+
+	return items, nil
+}
+
+func (r *receiptRepository) UpdateReceiptConfirmed(receiptId string, confirmed bool) error {
+	db := r.DB.Connection()
+
+	query := `
+	UPDATE receipts
+	SET confirmed = $1, updated_at = NOW()
+	WHERE receipt_id = $2`
+
+	_, err := db.Exec(query, confirmed, receiptId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

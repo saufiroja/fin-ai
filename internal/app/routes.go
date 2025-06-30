@@ -121,4 +121,13 @@ func (r *Routes) setupReceiptRoutes() {
 	receiptGroup.Post("/upload",
 		r.container.Dependencies.AuthMiddleware,
 		r.container.Controllers.Receipt.UploadReceipt)
+	receiptGroup.Get("/user",
+		r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Receipt.GetReceiptsByUserId)
+	receiptGroup.Get("/detail/user/:receipt_id",
+		r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Receipt.GetDetailReceiptUserById)
+	receiptGroup.Put("/confirm/:receipt_id",
+		r.container.Dependencies.AuthMiddleware,
+		r.container.Controllers.Receipt.UpdateReceiptConfirmed)
 }

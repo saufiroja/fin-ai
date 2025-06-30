@@ -40,3 +40,58 @@ func (r *receiptController) UploadReceipt(c *fiber.Ctx) error {
 		Message: "Receipt uploaded successfully",
 	})
 }
+
+func (r *receiptController) GetReceiptsByUserId(c *fiber.Ctx) error {
+	userId := c.Locals("user_id").(string)
+
+	receipts, err := r.receiptService.GetReceiptsByUserId(userId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to get receipts",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Receipts retrieved successfully",
+		Data:    receipts,
+	})
+}
+
+func (r *receiptController) GetDetailReceiptUserById(c *fiber.Ctx) error {
+	userId := c.Locals("user_id").(string)
+	receiptId := c.Params("receipt_id")
+
+	detail, err := r.receiptService.GetDetailReceiptUserById(userId, receiptId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to get receipt details",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Receipt details retrieved successfully",
+		Data:    detail,
+	})
+}
+
+func (r *receiptController) UpdateReceiptConfirmed(c *fiber.Ctx) error {
+	receiptId := c.Params("receipt_id")
+	confirmed := c.Query("confirmed") == "true"
+
+	err := r.receiptService.UpdateReceiptConfirmed(receiptId, confirmed)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(responses.Response{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to update receipt confirmation",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(responses.Response{
+		Status:  fiber.StatusOK,
+		Message: "Receipt confirmation updated successfully",
+	})
+}
