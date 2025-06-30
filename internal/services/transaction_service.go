@@ -248,7 +248,8 @@ func (t *transactionService) InsertTransaction(req *requests.TransactionRequest)
 		IsAutoCategorized:    req.IsAutoCategorized,
 		CreatedAt:            timestamp,
 		UpdatedAt:            timestamp,
-		Confirmed:            req.Confirmed, // Default to true for new transactions
+		Confirmed:            req.Confirmed,
+		Discount:             req.Discount,
 	}
 
 	err := t.transactionRepository.InsertTransaction(transaction)

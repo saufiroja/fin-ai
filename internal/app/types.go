@@ -25,10 +25,11 @@ type Dependencies struct {
 	Postgres       databases.PostgresManager
 	Redis          *redis.RedisClient
 	MinioClient    minio.MinioManager
-	LLMClient      llm.OpenAI
+	OpenAIClient   llm.OpenAI
 	Validator      utils.Validator
 	TokenGen       utils.TokenGenerator
 	AuthMiddleware fiber.Handler
+	GeminiClient   llm.Gemini
 }
 
 type Repositories struct {

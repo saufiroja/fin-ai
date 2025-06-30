@@ -19,7 +19,8 @@ type TransactionRequest struct {
 	AiCategoryConfidence float64                `json:"-"`
 	CreatedAt            time.Time              `json:"-"`
 	UpdatedAt            time.Time              `json:"-"`
-	Confirmed            bool                   `json:"confirmed"` // whether the transaction is confirmed by the user
+	Confirmed            bool                   `json:"confirmed"`
+	Discount             int64                  `json:"discount" validate:"omitempty,min=0"`
 }
 
 type UpdateTransactionRequest struct {

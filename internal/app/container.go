@@ -47,7 +47,8 @@ func (c *Container) initializeDependencies() *Dependencies {
 
 	redisClient := redis.NewRedisClient(conf, logger)
 
-	llmClient := llm.NewOpenAI(conf)
+	openAIClient := llm.NewOpenAI(conf)
+	geminiClient := llm.NewGemini(conf)
 	validator := utils.NewValidator()
 	tokenGenerator := utils.NewJWTTokenGenerator(conf)
 	authMiddleware := middleware.Authorization(conf)
@@ -58,10 +59,11 @@ func (c *Container) initializeDependencies() *Dependencies {
 		Postgres:       postgresInstance,
 		Redis:          redisClient,
 		MinioClient:    minioClient,
-		LLMClient:      llmClient,
+		OpenAIClient:   openAIClient,
 		Validator:      validator,
 		TokenGen:       tokenGenerator,
 		AuthMiddleware: authMiddleware,
+		GeminiClient:   geminiClient,
 	}
 }
 
@@ -89,7 +91,7 @@ func (c *Container) initializeServices() *Services {
 	transactionService := services.NewTransactionService(
 		c.Repositories.Transaction,
 		c.Dependencies.Logger,
-		c.Dependencies.LLMClient,
+		c.Dependencies.OpenAIClient,
 	)
 	// Uncomment the following line if you have a Chat service
 	// chatService := services.NewChatService(
@@ -102,7 +104,7 @@ func (c *Container) initializeServices() *Services {
 	categoryService := services.NewCategoryService(
 		c.Repositories.Category,
 		c.Dependencies.Logger,
-		c.Dependencies.LLMClient,
+		c.Dependencies.OpenAIClient,
 	)
 	receiptService := services.NewReceiptService(
 		c.Repositories.Receipt,
@@ -111,7 +113,8 @@ func (c *Container) initializeServices() *Services {
 		categoryService,
 		c.Dependencies.MinioClient,
 		c.Dependencies.Logger,
-		c.Dependencies.LLMClient,
+		c.Dependencies.OpenAIClient,
+		c.Dependencies.GeminiClient,
 	)
 
 	return &Services{

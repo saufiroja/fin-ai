@@ -42,6 +42,9 @@ type AppConfig struct {
 		Region    string
 		UseSSL    bool
 	}
+	Gemini struct {
+		ApiKey string
+	}
 }
 
 var appConfig *AppConfig
@@ -65,6 +68,7 @@ func NewAppConfig(logging logging.Logger) *AppConfig {
 			appConfig.initOpenAI(logging)
 			appConfig.initRedis()
 			appConfig.initMinio()
+			appConfig.initGemini()
 		} else {
 			logging.LogInfo("AppConfig already created")
 		}
@@ -140,4 +144,11 @@ func (c *AppConfig) initMinio() {
 	c.Minio.SecretKey = os.Getenv("MINIO_SECRET_KEY")
 	c.Minio.Region = os.Getenv("MINIO_REGION")
 	c.Minio.UseSSL = os.Getenv("MINIO_USE_SSL") == "true"
+}
+
+func (c *AppConfig) initGemini() {
+	c.Gemini.ApiKey = os.Getenv("GEMINI_API_KEY")
+	if c.Gemini.ApiKey == "" {
+		panic("Gemini API key not found")
+	}
 }

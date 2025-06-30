@@ -3,12 +3,10 @@ package services
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"image"
 	"mime/multipart"
-	"os"
 	"strings"
 	"time"
 
@@ -27,6 +25,7 @@ import (
 	"github.com/saufiroja/fin-ai/pkg/llm"
 	logging "github.com/saufiroja/fin-ai/pkg/loggings"
 	"github.com/saufiroja/fin-ai/pkg/minio"
+	"google.golang.org/genai"
 )
 
 type receiptService struct {
@@ -37,6 +36,7 @@ type receiptService struct {
 	minioClient        minio.MinioManager
 	logging            logging.Logger
 	openaiClient       llm.OpenAI
+	geminiClient       llm.Gemini
 	bucketName         string
 	objectName         string
 }
@@ -49,6 +49,7 @@ func NewReceiptService(
 	minioClient minio.MinioManager,
 	logging logging.Logger,
 	openaiClient llm.OpenAI,
+	geminiClient llm.Gemini,
 ) receipt.ReceiptManager {
 	return &receiptService{
 		receiptRepository:  receiptRepository,
@@ -60,64 +61,141 @@ func NewReceiptService(
 		openaiClient:       openaiClient,
 		bucketName:         "receipts",
 		objectName:         "receipt",
+		geminiClient:       geminiClient,
 	}
 }
 
 func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId string) error {
 	s.logging.LogInfo(fmt.Sprintf("Uploading receipt for user %s from file %s", userId, filePath.Filename))
 
+	if err := s.validateFileSize(filePath); err != nil {
+		return err
+	}
+
+	optimizedImageBytes, err := s.processImage(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to process image: %w", err)
+	}
+
+	categoriesOfString, err := s.getCategoriesString()
+	if err != nil {
+		return fmt.Errorf("failed to get categories: %w", err)
+	}
+
+	if err := s.uploadToMinIO(filePath, userId); err != nil {
+		return fmt.Errorf("failed to upload to MinIO: %w", err)
+	}
+
+	extractedData, responseString, responseAi, err := s.processReceiptWithGemini(optimizedImageBytes, categoriesOfString, filePath.Filename)
+	if err != nil {
+		return fmt.Errorf("failed to process receipt with AI: %w", err)
+	}
+
+	if err := s.logAIResponse(responseString, responseAi, userId); err != nil {
+		return fmt.Errorf("failed to log AI response: %w", err)
+	}
+
+	if err := s.saveReceipt(extractedData, filePath, userId); err != nil {
+		return fmt.Errorf("failed to save receipt to database: %w", err)
+	}
+
+	s.logging.LogInfo(fmt.Sprintf("Receipt for user %s uploaded and processed successfully", userId))
+	return nil
+}
+
+func (s *receiptService) validateFileSize(filePath *multipart.FileHeader) error {
+	if filePath.Size > 10*1024*1024 {
+		s.logging.LogError(fmt.Sprintf("File %s exceeds the maximum size limit of 10MB", filePath.Filename))
+		return fmt.Errorf("file exceeds the maximum size limit of 10MB")
+	}
+	return nil
+}
+
+func (s *receiptService) processImage(filePath *multipart.FileHeader) ([]byte, error) {
 	file, err := filePath.Open()
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to open multipart file %s: %v", filePath.Filename, err))
-		return fmt.Errorf("failed to open multipart file: %w", err)
+		return nil, fmt.Errorf("failed to open multipart file: %w", err)
 	}
 	defer file.Close()
+
 	// Decode the image from the multipart file
 	img, err := imaging.Decode(file)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to decode image file %s: %v", filePath.Filename, err))
-		return fmt.Errorf("failed to decode image file: %w", err)
+		return nil, fmt.Errorf("failed to decode image file: %w", err)
 	}
-	// Optimize image for OCR
-	img = s.optimizeImageForOCR(img)
 
-	// Convert optimized image to bytes for base64 encoding
-	var optimizedImageBytes []byte
+	img = s.optimizeImageForAIVision(img)
+
+	optimizedImageBytes, err := s.imageToBytes(img, filePath.Filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert image to bytes: %w", err)
+	}
+
+	return optimizedImageBytes, nil
+}
+
+func (s *receiptService) optimizeImageForAIVision(img image.Image) image.Image {
+	// 1. Auto-rotate if needed
+	img = s.autoRotateImage(img)
+
+	// 2. Resize to optimal size for AI Vision
+	img = imaging.Resize(img, 1600, 0, imaging.Lanczos)
+
+	// 3. Enhanced gamma correction for AI Vision
+	img = imaging.AdjustGamma(img, 1.1)
+
+	// 4. Enhanced contrast for better text clarity
+	img = imaging.AdjustContrast(img, 40)
+
+	// 5. Brightness adjustment for optimal reading
+	img = imaging.AdjustBrightness(img, 15)
+
+	// 6. Sharpen for text clarity
+	img = imaging.Sharpen(img, 1.2)
+
+	return img
+}
+
+func (s *receiptService) imageToBytes(img image.Image, filename string) ([]byte, error) {
 	buf := new(bytes.Buffer)
 
-	// Determine format based on original filename
 	var format imaging.Format = imaging.JPEG
-	if strings.HasSuffix(strings.ToLower(filePath.Filename), ".png") {
+	if strings.HasSuffix(strings.ToLower(filename), ".png") {
 		format = imaging.PNG
 	}
 
-	err = imaging.Encode(buf, img, format)
+	err := imaging.Encode(buf, img, format)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to encode optimized image: %v", err))
-		return fmt.Errorf("failed to encode optimized image: %w", err)
+		return nil, fmt.Errorf("failed to encode optimized image: %w", err)
 	}
-	optimizedImageBytes = buf.Bytes()
 
-	// get all categories
+	return buf.Bytes(), nil
+}
+
+func (s *receiptService) getCategoriesString() (string, error) {
 	reqCategoryQuery := &requests.GetAllCategoryQuery{
-		Limit:  100, // Set a reasonable limit for categories
-		Offset: 0,   // Start from the beginning
+		Limit:  100,
+		Offset: 0,
 	}
-	categories, _ := s.categoryService.FindAllCategories(reqCategoryQuery)
-	dateNow := time.Now()
-	// size < 10MB
-	if filePath.Size > 10*1024*1024 {
-		s.logging.LogError(fmt.Sprintf("File %s exceeds the maximum size limit of 10MB", filePath.Filename))
-		return fmt.Errorf("file exceeds the maximum size limit of 10MB")
+
+	categories, err := s.categoryService.FindAllCategories(reqCategoryQuery)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to get categories: %v", err))
+		return "", fmt.Errorf("failed to get categories: %w", err)
 	}
 
 	categoriesStrings := make([]string, len(categories.Categories))
 	for i, category := range categories.Categories {
 		categoriesStrings[i] = fmt.Sprintf("%s (%s)", category.Name, category.CategoryId)
 	}
-	categoriesOfString := strings.Join(categoriesStrings, ", ")
 
-	// Ensure bucket exists before proceeding
+	return strings.Join(categoriesStrings, ", "), nil
+}
+
+func (s *receiptService) uploadToMinIO(filePath *multipart.FileHeader, userId string) error {
 	bucketExists, err := s.minioClient.BucketExists(s.bucketName)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Error checking bucket existence: %v", err))
@@ -133,17 +211,15 @@ func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId st
 		s.logging.LogInfo(fmt.Sprintf("Bucket %s created successfully", s.bucketName))
 	}
 
-	// Set the object name for the file in MinIO
 	s.objectName = fmt.Sprintf("%s/%s", userId, filePath.Filename)
 
-	// check if the file exists, if it does, skip the upload
 	exists, err := s.minioClient.FileExists(s.bucketName, s.objectName)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Error checking file existence: %v", err))
 		return err
 	}
+
 	if !exists {
-		// Upload the file to MinIO
 		err = s.minioClient.UploadFileFromMultipart(s.bucketName, s.objectName, filePath)
 		if err != nil {
 			s.logging.LogError(fmt.Sprintf("Failed to upload file %s to bucket %s: %v", filePath.Filename, s.bucketName, err))
@@ -152,101 +228,55 @@ func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId st
 		s.logging.LogInfo(fmt.Sprintf("File %s uploaded successfully to bucket %s", filePath.Filename, s.bucketName))
 	}
 
-	// Use optimized image bytes instead of reading from MinIO
-	base64Image := base64.StdEncoding.EncodeToString(optimizedImageBytes)
+	return nil
+}
 
-	// Save optimized image to images folder for debugging/verification
-	imagesDir := "images"
-	if err := os.MkdirAll(imagesDir, 0755); err != nil {
-		s.logging.LogError(fmt.Sprintf("Failed to create images directory: %v", err))
-		// Don't return error here as this is optional debugging feature
-	} else {
-		// Generate unique filename for the processed image
-		outputFileName := fmt.Sprintf("optimized_%s_%s", userId, filePath.Filename)
-		outputPath := fmt.Sprintf("%s/%s", imagesDir, outputFileName)
-
-		if err := imaging.Save(img, outputPath); err != nil {
-			s.logging.LogError(fmt.Sprintf("Failed to save optimized image: %v", err))
-			// Don't return error here as this is optional debugging feature
-		} else {
-			s.logging.LogInfo(fmt.Sprintf("Optimized image saved to: %s", outputPath))
-		}
-	}
-
-	// image type
-	imageType := "image/png" // default
-	if strings.HasSuffix(s.objectName, ".jpg") || strings.HasSuffix(s.objectName, ".jpeg") {
+func (s *receiptService) processReceiptWithGemini(optimizedImageBytes []byte, categoriesOfString, filename string) (*responses.ReceiptExtractionResponse, string, *responses.ResponseAI, error) {
+	imageType := "image/png"
+	if strings.HasSuffix(strings.ToLower(filename), ".jpg") || strings.HasSuffix(strings.ToLower(filename), ".jpeg") {
 		imageType = "image/jpeg"
 	}
 
-	imageBase64 := fmt.Sprintf("data:%s;base64,%s", imageType, base64Image)
-
-	// Process the receipt using LLM
-	messagePrompt := []openai.ChatCompletionMessageParamUnion{
-		// System message
-		{
-			OfSystem: &openai.ChatCompletionSystemMessageParam{
-				Content: openai.ChatCompletionSystemMessageParamContentUnion{
-					OfString: param.Opt[string]{
-						Value: prompt.ReceiptExtractionSystemPrompt,
-					},
-				},
-			},
-		},
-		// User message with image and text
-		{
-			OfUser: &openai.ChatCompletionUserMessageParam{
-				Content: openai.ChatCompletionUserMessageParamContentUnion{
-					OfArrayOfContentParts: []openai.ChatCompletionContentPartUnionParam{
-						{
-							OfImageURL: &openai.ChatCompletionContentPartImageParam{
-								ImageURL: openai.ChatCompletionContentPartImageImageURLParam{
-									URL:    imageBase64,
-									Detail: "high",
-								},
-							},
-						},
-						{
-							OfText: &openai.ChatCompletionContentPartTextParam{
-								Text: fmt.Sprintf(prompt.ReceiptExtractionUserPromptTemplate, categoriesOfString),
-							},
-						},
-					},
-				},
-			},
-		},
+	messagePrompt := fmt.Sprintf(prompt.ReceiptExtractionUserPromptTemplate, categoriesOfString)
+	parts := []*genai.Part{
+		genai.NewPartFromBytes(optimizedImageBytes, imageType),
+		genai.NewPartFromText(messagePrompt),
 	}
-	responseAi, err := s.openaiClient.SendChat(context.Background(), "gpt-4o-mini", messagePrompt)
-	fmt.Printf("LLM response: %s\n", responseAi.Response)
+
+	messages := []*genai.Content{
+		genai.NewContentFromParts(parts, genai.RoleUser),
+	}
+
+	responseAi, err := s.geminiClient.Run(context.Background(), "gemini-2.5-flash", messages)
 	if err != nil {
-		s.logging.LogError(fmt.Sprintf("Failed to process receipt with LLM: %v", err))
-		return fmt.Errorf("failed to process receipt: %w", err)
+		s.logging.LogError(fmt.Sprintf("Failed to process receipt with AI: %v", err))
+		return nil, "", nil, fmt.Errorf("failed to process receipt with AI: %w", err)
 	}
 
-	// Convert response to string
-	var responseString string
-	if resp, ok := responseAi.Response.(string); ok {
-		responseString = resp
-	} else {
-		s.logging.LogError("Failed to convert LLM response to string")
-		return fmt.Errorf("failed to convert LLM response to string")
+	responseString, ok := responseAi.Response.(string)
+	if !ok {
+		s.logging.LogError("Failed to convert AI response to string")
+		return nil, "", nil, fmt.Errorf("failed to convert AI response to string")
 	}
 
 	var extractedData responses.ReceiptExtractionResponse
 	err = json.Unmarshal([]byte(responseString), &extractedData)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to parse JSON response: %v", err))
-		return fmt.Errorf("failed to parse JSON response: %w", err)
+		return nil, "", nil, fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
-	// Convert messagePrompt to JSON string for logging
-	messagePromptJSON, err := json.Marshal(messagePrompt)
+	return &extractedData, responseString, responseAi, nil
+}
+
+func (s *receiptService) logAIResponse(responseString string, responseAi *responses.ResponseAI, userId string) error {
+	messagePromptJSON, err := json.Marshal(responseString)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to marshal message prompt: %v", err))
 		return fmt.Errorf("failed to marshal message prompt: %w", err)
 	}
 
-	// log the AI response
+	dateNow := time.Now()
 	logMessage := &models.LogMessage{
 		LogMessageId: ulid.Make().String(),
 		UserId:       userId,
@@ -255,7 +285,7 @@ func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId st
 		InputToken:   responseAi.InputToken,
 		OutputToken:  responseAi.OutputToken,
 		Topic:        "receipt_extraction",
-		Model:        "gpt-4o-mini",
+		Model:        "gemini-2.5-flash",
 		CreatedAt:    dateNow,
 		UpdatedAt:    dateNow,
 	}
@@ -266,7 +296,12 @@ func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId st
 		return fmt.Errorf("failed to insert log message: %w", err)
 	}
 
-	// create embedding for the extracted receipt text
+	return nil
+}
+
+func (s *receiptService) saveReceipt(extractedData *responses.ReceiptExtractionResponse, filePath *multipart.FileHeader, userId string) error {
+	dateNow := time.Now()
+
 	extractedReceiptJSON, err := json.Marshal(extractedData.ExtractedReceipt)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to marshal extracted receipt: %v", err))
@@ -274,9 +309,10 @@ func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId st
 	}
 
 	input := openai.EmbeddingNewParamsInputUnion{
-		OfString: param.NewOpt(string(extractedReceiptJSON)), // Use the extracted receipt text for embedding
+		OfString: param.NewOpt(string(extractedReceiptJSON)),
 	}
 	embedding := s.openaiClient.CreateEmbedding(context.Background(), input)
+
 	metaData := models.MetaData{
 		FileName: filePath.Filename,
 		FileSize: filePath.Size,
@@ -289,7 +325,7 @@ func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId st
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	// Create a new receipt model
+	// Create receipt model
 	receiptModel := &models.Receipt{
 		ReceiptId:                 ulid.Make().String(),
 		UserId:                    userId,
@@ -300,48 +336,63 @@ func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId st
 		MetaData:                  metaDataJSON,
 		ExtractedReceipt:          extractedReceiptJSON,
 		ExtractedReceiptEmbedding: embedding.Embeddings,
-		Confirmed:                 false, // Assuming new receipts are not confirmed by default
+		Confirmed:                 false,
 		TransactionDate:           dateNow,
 		CreatedAt:                 dateNow,
 		UpdatedAt:                 dateNow,
 	}
 
-	// Insert the receipt into the database
+	// Insert receipt
 	err = s.insertReceipt(receiptModel)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to insert receipt: %v", err))
 		return fmt.Errorf("failed to insert receipt: %w", err)
 	}
 
-	// insert receipt items
-	for _, item := range extractedData.ExtractedReceipt.Items {
-		if *item.CategoryId == "" {
-			// null category ID
+	// Insert receipt items
+	return s.insertReceiptItems(extractedData.ExtractedReceipt.Items, receiptModel.ReceiptId, userId, dateNow)
+}
+
+func (s *receiptService) insertReceiptItems(items []responses.ReceiptItemResponse, receiptId, userId string, dateNow time.Time) error {
+	for _, item := range items {
+		// Handle empty category ID
+		if item.CategoryId != nil && *item.CategoryId == "" {
 			s.logging.LogInfo("Category ID is empty, setting it to nil")
 			item.CategoryId = nil
 		}
+
+		// Create transaction
+		categoryId := ""
+		if item.CategoryId != nil {
+			categoryId = *item.CategoryId
+		}
+
 		newTransaction := &requests.TransactionRequest{
 			UserId:               userId,
 			Amount:               item.ItemPriceTotal,
 			Description:          item.ItemName,
-			CategoryId:           *item.CategoryId,
-			Type:                 "expense", // Assuming all transactions from receipts are expenses
-			Source:               "receipt", // Assuming the source is 'receipt'
+			CategoryId:           categoryId,
+			Type:                 "expense",
+			Source:               "receipt",
 			TransactionDate:      dateNow,
 			IsAutoCategorized:    true,
 			AiCategoryConfidence: item.AiCategoryConfidence,
 			CreatedAt:            dateNow,
 			UpdatedAt:            dateNow,
-			Confirmed:            false, // Assuming new transactions are not confirmed by default
+			Confirmed:            false,
+			Discount:             item.ItemDiscount,
 		}
-		err = s.transactionService.InsertTransaction(newTransaction)
+
+		err := s.transactionService.InsertTransaction(newTransaction)
 		if err != nil {
 			s.logging.LogError(fmt.Sprintf("Failed to insert transaction: %v", err))
 			return fmt.Errorf("failed to insert transaction: %w", err)
 		}
+
+		// Create receipt item
 		receiptItem := &models.ReceiptItem{
 			ReceiptItemId:  ulid.Make().String(),
-			ReceiptId:      receiptModel.ReceiptId,
+			ReceiptId:      receiptId,
 			ItemName:       item.ItemName,
 			ItemQuantity:   item.ItemQuantity,
 			ItemPrice:      item.ItemPrice,
@@ -356,40 +407,11 @@ func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId st
 			s.logging.LogError(fmt.Sprintf("Failed to insert receipt item: %v", err))
 			return fmt.Errorf("failed to insert receipt item: %w", err)
 		}
-		s.logging.LogInfo(fmt.Sprintf("Receipt item %s inserted successfully for receipt %s", item.ItemName, receiptModel.ReceiptId))
+
+		s.logging.LogInfo(fmt.Sprintf("Receipt item %s inserted successfully for receipt %s", item.ItemName, receiptId))
 	}
 
-	s.logging.LogInfo(fmt.Sprintf("Receipt for user %s uploaded and processed successfully", userId))
-
 	return nil
-}
-
-func (s *receiptService) optimizeImageForOCR(img image.Image) image.Image {
-	// 1. Auto-rotate if needed (detect orientation)
-	img = s.autoRotateImage(img)
-
-	// 2. Resize to optimal size for both OCR and AI vision
-	img = imaging.Resize(img, 1600, 0, imaging.Lanczos)
-
-	// 3. Convert to grayscale for better text recognition
-	img = imaging.Grayscale(img)
-
-	// 4. Apply gamma correction for better contrast
-	img = imaging.AdjustGamma(img, 1.2)
-
-	// 5. Enhance contrast for text clarity
-	img = imaging.AdjustContrast(img, 35)
-
-	// 6. Brightness adjustment for white background
-	img = imaging.AdjustBrightness(img, 10)
-
-	// 7. Sharpen for text clarity
-	img = imaging.Sharpen(img, 1.0)
-
-	// 8. Apply threshold for binary image (optional)
-	// img = s.applyThreshold(img)
-
-	return img
 }
 
 func (s *receiptService) autoRotateImage(img image.Image) image.Image {

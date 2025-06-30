@@ -82,10 +82,11 @@ func (t *transactionRepository) InsertTransaction(transaction *models.Transactio
     is_auto_categorized,
     created_at,
     updated_at,
-	confirmed
+	confirmed,
+	discount
     )
     VALUES (
-		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
 	)
 `
 	_, err := db.Exec(query,
@@ -102,7 +103,8 @@ func (t *transactionRepository) InsertTransaction(transaction *models.Transactio
 		transaction.IsAutoCategorized,
 		transaction.CreatedAt,
 		transaction.UpdatedAt,
-		transaction.Confirmed, // Assuming Confirmed field is added to the Transaction model
+		transaction.Confirmed,
+		transaction.Discount,
 	)
 
 	return err
