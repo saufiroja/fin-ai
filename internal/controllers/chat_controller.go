@@ -23,7 +23,7 @@ func NewChatController(chatService chat.ChatManager, validator utils.Validator) 
 }
 
 func (c *chatController) CreateChatSession(ctx *fiber.Ctx) error {
-	userId := ctx.Params("user_id")
+	userId := ctx.Locals("user_id").(string)
 	chatSession, err := c.chatService.CreateChatSession(userId)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(responses.Response{
@@ -39,7 +39,7 @@ func (c *chatController) CreateChatSession(ctx *fiber.Ctx) error {
 }
 
 func (c *chatController) FindAllChatSessions(ctx *fiber.Ctx) error {
-	userId := ctx.Params("user_id")
+	userId := ctx.Locals("user_id").(string)
 	chatSessions, err := c.chatService.FindAllChatSessions(userId)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(responses.Response{
@@ -85,7 +85,7 @@ func (c *chatController) RenameChatSession(ctx *fiber.Ctx) error {
 
 func (c *chatController) DeleteChatSession(ctx *fiber.Ctx) error {
 	chatSessionId := ctx.Params("chat_session_id")
-	userId := ctx.Params("user_id")
+	userId := ctx.Locals("user_id").(string)
 
 	err := c.chatService.DeleteChatSession(chatSessionId, userId)
 	if err != nil {
@@ -103,6 +103,7 @@ func (c *chatController) DeleteChatSession(ctx *fiber.Ctx) error {
 
 func (c *chatController) SendChatMessage(ctx *fiber.Ctx) error {
 	message := new(models.ChatMessageRequest)
+	message.UserId = ctx.Locals("user_id").(string)
 
 	if err := ctx.BodyParser(message); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{
@@ -136,7 +137,7 @@ func (c *chatController) SendChatMessage(ctx *fiber.Ctx) error {
 
 func (c *chatController) GetChatSessionDetail(ctx *fiber.Ctx) error {
 	chatSessionId := ctx.Params("chat_session_id")
-	userId := ctx.Params("user_id")
+	userId := ctx.Locals("user_id").(string)
 
 	messages, err := c.chatService.FindChatSessionDetailByChatSessionIdAndUserId(chatSessionId, userId)
 	if err != nil {

@@ -28,9 +28,17 @@ type ChatSessionUpdateRequest struct {
 type ChatMessageRequest struct {
 	ChatSessionId string `json:"chat_session_id" validate:"required"`
 	UserId        string `json:"user_id" validate:"required"`
-	ModelId       string `json:"model_id" validate:"required"`
+	ModelId       string `json:"model_id"`
+	Mode          Mode   `json:"mode" validate:"required,oneof=ask agent"`
 	Message       string `json:"message" validate:"required"`
 }
+
+type Mode string
+
+const (
+	ModeChat  Mode = "ask"
+	ModeAgent Mode = "agent"
+)
 
 type ChatSessionDetail struct {
 	ChatMessageId string            `json:"chat_message_id"`

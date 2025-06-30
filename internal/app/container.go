@@ -94,13 +94,13 @@ func (c *Container) initializeServices() *Services {
 		c.Dependencies.OpenAIClient,
 	)
 	// Uncomment the following line if you have a Chat service
-	// chatService := services.NewChatService(
-	// 	c.Repositories.Chat,
-	// 	c.Dependencies.Logger,
-	// 	c.Dependencies.LLMClient,
-	// 	c.Repositories.ModelRegistry,
-	// 	c.Repositories.LogMessage,
-	// )
+	chatService := services.NewChatService(
+		c.Repositories.Chat,
+		c.Dependencies.Logger,
+		c.Dependencies.GeminiClient,
+		c.Repositories.ModelRegistry,
+		c.Repositories.LogMessage,
+	)
 	categoryService := services.NewCategoryService(
 		c.Repositories.Category,
 		c.Dependencies.Logger,
@@ -118,10 +118,10 @@ func (c *Container) initializeServices() *Services {
 	)
 
 	return &Services{
-		Auth:       authService,
-		User:       userService,
-		LogMessage: logMessageService,
-		// Chat: chatService,
+		Auth:        authService,
+		User:        userService,
+		LogMessage:  logMessageService,
+		Chat:        chatService,
 		Transaction: transactionService,
 		Category:    categoryService,
 		Receipt:     receiptService,

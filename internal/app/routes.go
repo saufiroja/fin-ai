@@ -59,12 +59,12 @@ func (r *Routes) setupChatRoutes() {
 	globalApi := r.app.Group("/api/v1")
 	chatGroup := globalApi.Group("/chat")
 
-	chatGroup.Post("/session/:user_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.CreateChatSession)
-	chatGroup.Get("/session/:user_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.FindAllChatSessions)
-	chatGroup.Put("/session-rename", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.RenameChatSession)
-	chatGroup.Delete("/session/:chat_session_id/:user_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.DeleteChatSession)
-	chatGroup.Post("/send", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.SendChatMessage)
-	chatGroup.Get("/session-detail/:chat_session_id/:user_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.GetChatSessionDetail)
+	chatGroup.Post("/sessions", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.CreateChatSession)
+	chatGroup.Get("/sessions", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.FindAllChatSessions)
+	chatGroup.Put("/sessions/rename", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.RenameChatSession)
+	chatGroup.Delete("/sessions/:chat_session_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.DeleteChatSession)
+	chatGroup.Post("/sessions/send", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.SendChatMessage)
+	chatGroup.Get("/sessions/:chat_session_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.GetChatSessionDetail)
 }
 
 func (r *Routes) setupTransactionRoutes() {
