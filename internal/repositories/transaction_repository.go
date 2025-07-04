@@ -30,12 +30,15 @@ func (t *transactionRepository) GetAllTransactions(req *requests.GetAllTransacti
         FROM transactions
         WHERE ($1 = '' OR category_id = $1)
         AND ($2 = '' OR LOWER(description) LIKE LOWER('%' || $2 || '%'))
-		AND ($6 = '' OR transaction_date BETWEEN $6::date AND $7::date)
+        AND (NULLIF($6, '') IS NULL OR NULLIF($7, '') IS NULL OR 
+             transaction_date BETWEEN 
+             ($6::date + INTERVAL '0 hours')::timestamp AND 
+             ($7::date + INTERVAL '23 hours 59 minutes 59 seconds')::timestamp)
 		AND user_id = $5
         ORDER BY transaction_date DESC
         LIMIT $3 OFFSET $4`
 
-	rows, err := db.Query(query, req.Category, req.Search, req.Limit, req.Offset, userId, req.StartDate, req.EndDate)
+	rows, err := db.Query(query, req.CategoryId, req.Search, req.Limit, req.Offset, userId, req.StartDate, req.EndDate)
 	if err != nil {
 		return nil, err
 	}
@@ -89,10 +92,11 @@ func (t *transactionRepository) InsertTransaction(transaction *models.Transactio
     created_at,
     updated_at,
 	confirmed,
-	discount
+	discount,
+	payment_method
     )
     VALUES (
-		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
 	)
 `
 	_, err := db.Exec(query,
@@ -111,6 +115,7 @@ func (t *transactionRepository) InsertTransaction(transaction *models.Transactio
 		transaction.UpdatedAt,
 		transaction.Confirmed,
 		transaction.Discount,
+		transaction.PaymentMethod,
 	)
 
 	return err
@@ -135,7 +140,8 @@ func (t *transactionRepository) GetTransactionByID(id string) (*models.Transacti
         created_at, 
         updated_at,
         confirmed,
-        discount
+        discount,
+		payment_method
     FROM transactions
     WHERE transaction_id = $1
 `
@@ -159,6 +165,7 @@ func (t *transactionRepository) GetTransactionByID(id string) (*models.Transacti
 		&transaction.UpdatedAt,
 		&transaction.Confirmed,
 		&transaction.Discount,
+		&transaction.PaymentMethod,
 	)
 
 	if err != nil {
@@ -186,8 +193,9 @@ func (t *transactionRepository) UpdateTransaction(transaction *models.Transactio
         is_auto_categorized = $10,
         updated_at = $11,
         confirmed = $12,
-        discount = $13
-    WHERE transaction_id = $14
+        discount = $13,
+		payment_method = $14
+    WHERE transaction_id = $15
 `
 
 	_, err := db.Exec(query,
@@ -204,6 +212,7 @@ func (t *transactionRepository) UpdateTransaction(transaction *models.Transactio
 		transaction.UpdatedAt,
 		transaction.Confirmed,
 		transaction.Discount,
+		transaction.PaymentMethod,
 		transaction.TransactionId,
 	)
 
@@ -227,15 +236,18 @@ func (t *transactionRepository) CountAllTransactions(req *requests.GetAllTransac
 	db := t.DB.Connection()
 
 	query := `
-        SELECT COUNT(*)
-        FROM transactions
-        WHERE ($1 = '' OR category_id = $1)
-        AND ($2 = '' OR LOWER(description) LIKE LOWER('%' || $2 || '%'))
-		AND user_id = $3
-		AND ($4 = '' OR transaction_date BETWEEN $4::date AND $5::date)`
+	SELECT COUNT(*)
+	FROM transactions
+	WHERE ($1 = '' OR category_id = $1)
+	AND ($2 = '' OR LOWER(description) LIKE LOWER('%' || $2 || '%'))
+	AND user_id = $3
+	AND (NULLIF($4, '') IS NULL OR NULLIF($5, '') IS NULL 
+	OR transaction_date BETWEEN ($4::date + INTERVAL '0 hours')::timestamp AND 
+	($5::date + INTERVAL '23 hours 59 minutes 59 seconds')::timestamp)
+	`
 
 	var count int64
-	err := db.QueryRow(query, req.Category, req.Search, userId, req.StartDate, req.EndDate).Scan(&count)
+	err := db.QueryRow(query, req.CategoryId, req.Search, userId, req.StartDate, req.EndDate).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -252,10 +264,13 @@ func (t *transactionRepository) GetTransactionsStats(userId string, req *request
             COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense
         FROM transactions
 		WHERE user_id = $1
-        AND (NULLIF($2, '') IS NULL OR NULLIF($3, '') IS NULL OR transaction_date BETWEEN $2::date AND $3::date)
+		AND ($4 = '' OR category_id = $4)
+        AND (NULLIF($2, '') IS NULL OR NULLIF($3, '') IS NULL 
+		OR transaction_date BETWEEN ($2::date + INTERVAL '0 hours')::timestamp AND 
+		($3::date + INTERVAL '23 hours 59 minutes 59 seconds')::timestamp)
     `
 
-	row := db.QueryRow(query, userId, req.StartDate, req.EndDate)
+	row := db.QueryRow(query, userId, req.StartDate, req.EndDate, req.CategoryId)
 
 	stats := &responses.OverviewTransactions{}
 	err := row.Scan(

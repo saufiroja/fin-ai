@@ -21,6 +21,7 @@ type TransactionRequest struct {
 	UpdatedAt            time.Time              `json:"-"`
 	Confirmed            bool                   `json:"confirmed"`
 	Discount             int64                  `json:"discount" validate:"omitempty,min=0"`
+	PaymentMethod        string                 `json:"payment_method"`
 }
 
 type UpdateTransactionRequest struct {
@@ -33,18 +34,23 @@ type UpdateTransactionRequest struct {
 	Source               string                 `json:"source" validate:"omitempty,max=255"`
 	IsAutoCategorized    bool                   `json:"is_auto_categorized" validate:"omitempty"`
 	AiCategoryConfidence float64                `json:"ai_category_confidence" validate:"omitempty,min=0,max=1"`
+	TransactionDate      time.Time              `json:"transaction_date" validate:"omitempty,datetime=2006-01-02"`
+	Confirmed            bool                   `json:"confirmed" validate:"omitempty"`
+	Discount             int64                  `json:"discount" validate:"omitempty,min=0"`
+	PaymentMethod        string                 `json:"payment_method" validate:"omitempty,max=255"`
 }
 
 type GetAllTransactionsQuery struct {
-	Limit     int    `query:"limit" validate:"omitempty,min=1,max=100"`
-	Offset    int    `query:"offset" validate:"omitempty,min=0"`
-	Category  string `query:"category" validate:"omitempty"`
-	Search    string `query:"search" validate:"omitempty"`
-	StartDate string `query:"start_date" validate:"omitempty,datetime=2006-01-02"`
-	EndDate   string `query:"end_date" validate:"omitempty,datetime=2006-01-02"`
+	Limit      int    `query:"limit" validate:"omitempty,min=1,max=100"`
+	Offset     int    `query:"offset" validate:"omitempty,min=0"`
+	CategoryId string `query:"category_id" validate:"omitempty"`
+	Search     string `query:"search" validate:"omitempty"`
+	StartDate  string `query:"start_date" validate:"omitempty,datetime=2006-01-02"`
+	EndDate    string `query:"end_date" validate:"omitempty,datetime=2006-01-02"`
 }
 
 type OverviewTransactionsQuery struct {
-	StartDate string `query:"start_date" validate:"omitempty,datetime=2006-01-02"`
-	EndDate   string `query:"end_date" validate:"omitempty,datetime=2006-01-02"`
+	StartDate  string `query:"start_date" validate:"omitempty,datetime=2006-01-02"`
+	EndDate    string `query:"end_date" validate:"omitempty,datetime=2006-01-02"`
+	CategoryId string `query:"category_id" validate:"omitempty"`
 }

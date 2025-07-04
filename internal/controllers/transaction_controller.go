@@ -20,12 +20,12 @@ func NewTransactionController(transactionService transaction.TransactionManager)
 func (t *transactionController) GetAllTransactions(ctx *fiber.Ctx) error {
 	userId := ctx.Locals("user_id").(string) // Assuming user_id is set in context
 	transactionQuery := &requests.GetAllTransactionsQuery{
-		Limit:     10, // Default limit
-		Offset:    1,  // Default offset
-		Category:  "",
-		Search:    "",
-		StartDate: "",
-		EndDate:   "",
+		Limit:      10, // Default limit
+		Offset:     1,  // Default offset
+		CategoryId: "",
+		Search:     "",
+		StartDate:  "",
+		EndDate:    "",
 	}
 	if err := ctx.QueryParser(transactionQuery); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{

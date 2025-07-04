@@ -22,4 +22,5 @@ type Transaction struct {
 	UpdatedAt            time.Time              `json:"updated_at"`
 	Confirmed            bool                   `json:"confirmed"`
 	Discount             int64                  `json:"discount" validate:"omitempty,min=0"`
+	PaymentMethod        string                 `json:"payment_method"`
 }

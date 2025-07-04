@@ -52,12 +52,12 @@ func (t *transactionService) GetAllTransactions(req *requests.GetAllTransactions
 
 	// Create query with proper offset
 	queryReq := &requests.GetAllTransactionsQuery{
-		Offset:    offset,
-		Limit:     req.Limit,
-		Category:  req.Category,
-		Search:    req.Search,
-		StartDate: req.StartDate,
-		EndDate:   req.EndDate,
+		Offset:     offset,
+		Limit:      req.Limit,
+		CategoryId: req.CategoryId,
+		Search:     req.Search,
+		StartDate:  req.StartDate,
+		EndDate:    req.EndDate,
 	}
 
 	transactions, err := t.transactionRepository.GetAllTransactions(queryReq, userId)
@@ -266,7 +266,6 @@ func (t *transactionService) InsertTransaction(req *requests.TransactionRequest)
 	return nil
 }
 
-// Helper function to parse confidence from AI response
 func (t *transactionService) parseConfidenceFromResponse(response string) (float64, error) {
 	// Remove any whitespace and parse as float
 	response = strings.TrimSpace(response)
@@ -371,6 +370,9 @@ func (t *transactionService) UpdateTransaction(transactionId string, req *reques
 		TransactionDate:      existingTransaction.TransactionDate, // Keep original date
 		CreatedAt:            existingTransaction.CreatedAt,       // Keep original created at
 		UpdatedAt:            time.Now(),                          // Update to current time
+		Confirmed:            req.Confirmed,
+		Discount:             req.Discount,
+		PaymentMethod:        req.PaymentMethod,
 	}
 
 	// Update the transaction in the repository
