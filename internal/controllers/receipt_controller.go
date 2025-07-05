@@ -101,8 +101,9 @@ func (r *receiptController) GetDetailReceiptUserById(c *fiber.Ctx) error {
 func (r *receiptController) UpdateReceiptConfirmed(c *fiber.Ctx) error {
 	receiptId := c.Params("receipt_id")
 	confirmed := c.Query("confirmed") == "true"
+	userId := c.Locals("user_id").(string)
 
-	err := r.receiptService.UpdateReceiptConfirmed(receiptId, confirmed)
+	err := r.receiptService.UpdateReceiptConfirmed(userId, receiptId, confirmed)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(responses.Response{
 			Status:  fiber.StatusInternalServerError,

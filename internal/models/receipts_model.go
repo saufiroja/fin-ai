@@ -19,15 +19,17 @@ type Receipt struct {
 }
 
 type ReceiptItem struct {
-	ReceiptItemId  string    `json:"receipt_item_id"`
-	ReceiptId      string    `json:"receipt_id"`
-	ItemName       string    `json:"item_name"`
-	ItemQuantity   int       `json:"item_quantity"`
-	ItemPrice      int64     `json:"item_price"`
-	ItemPriceTotal int64     `json:"item_price_total"`
-	ItemDiscount   int64     `json:"item_discount"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ReceiptItemId        string    `json:"receipt_item_id"`
+	ReceiptId            string    `json:"receipt_id"`
+	ItemName             string    `json:"item_name"`
+	ItemQuantity         int       `json:"item_quantity"`
+	ItemPrice            int64     `json:"item_price"`
+	ItemPriceTotal       int64     `json:"item_price_total"`
+	ItemDiscount         int64     `json:"item_discount"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
+	CategoryId           *string   `json:"category_id,omitempty"`
+	AiCategoryConfidence float64   `json:"ai_category_confidence,omitempty"`
 }
 
 type MetaData struct {

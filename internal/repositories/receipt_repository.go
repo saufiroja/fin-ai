@@ -60,11 +60,13 @@ func (r *receiptRepository) InsertReceiptItem(receiptItem *models.ReceiptItem) e
     item_price_total, 
     item_discount, 
     created_at, 
-    updated_at
+    updated_at,
+	category_id,
+	ai_category_confidence
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`
+    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), $8, $9)`
 
-	_, err := db.Exec(query, receiptItem.ReceiptItemId, receiptItem.ReceiptId, receiptItem.ItemName, receiptItem.ItemQuantity, receiptItem.ItemPrice, receiptItem.ItemPriceTotal, receiptItem.ItemDiscount)
+	_, err := db.Exec(query, receiptItem.ReceiptItemId, receiptItem.ReceiptId, receiptItem.ItemName, receiptItem.ItemQuantity, receiptItem.ItemPrice, receiptItem.ItemPriceTotal, receiptItem.ItemDiscount, receiptItem.CategoryId, receiptItem.AiCategoryConfidence)
 	if err != nil {
 		return err
 	}
@@ -228,7 +230,9 @@ func (r *receiptRepository) GetReceiptItemsByReceiptId(receiptId string) ([]*mod
         item_price_total, 
         item_discount, 
         created_at, 
-        updated_at
+        updated_at,
+		category_id,
+		ai_category_confidence
     FROM receipt_items
     WHERE receipt_id = $1`
 
@@ -241,7 +245,7 @@ func (r *receiptRepository) GetReceiptItemsByReceiptId(receiptId string) ([]*mod
 	var items []*models.ReceiptItem
 	for rows.Next() {
 		var item models.ReceiptItem
-		if err := rows.Scan(&item.ReceiptItemId, &item.ReceiptId, &item.ItemName, &item.ItemQuantity, &item.ItemPrice, &item.ItemPriceTotal, &item.ItemDiscount, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		if err := rows.Scan(&item.ReceiptItemId, &item.ReceiptId, &item.ItemName, &item.ItemQuantity, &item.ItemPrice, &item.ItemPriceTotal, &item.ItemDiscount, &item.CreatedAt, &item.UpdatedAt, &item.CategoryId, &item.AiCategoryConfidence); err != nil {
 			return nil, err
 		}
 		items = append(items, &item)

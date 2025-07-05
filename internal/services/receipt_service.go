@@ -261,10 +261,15 @@ func (s *receiptService) processReceiptWithGemini(optimizedImageBytes []byte, ca
 		return nil, "", nil, fmt.Errorf("failed to convert AI response to string")
 	}
 
+	// Clean the response string to extract JSON content
+	cleanedResponse := s.cleanAIResponse(responseString)
+
 	var extractedData responses.ReceiptExtractionResponse
-	err = json.Unmarshal([]byte(responseString), &extractedData)
+	err = json.Unmarshal([]byte(cleanedResponse), &extractedData)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to parse JSON response: %v", err))
+		s.logging.LogError(fmt.Sprintf("Raw response: %s", responseString))
+		s.logging.LogError(fmt.Sprintf("Cleaned response: %s", cleanedResponse))
 		return nil, "", nil, fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
@@ -363,54 +368,22 @@ func (s *receiptService) saveReceipt(extractedData *responses.ReceiptExtractionR
 
 func (s *receiptService) insertReceiptItems(items []responses.ReceiptItemResponse, receiptId, userId string, dateNow time.Time) error {
 	for _, item := range items {
-		// Handle empty category ID
-		if item.CategoryId != nil && *item.CategoryId == "" {
-			s.logging.LogInfo("Category ID is empty, setting it to nil")
-			item.CategoryId = nil
-		}
-
-		// Create transaction
-		categoryId := ""
-		if item.CategoryId != nil {
-			categoryId = *item.CategoryId
-		}
-
-		newTransaction := &requests.TransactionRequest{
-			UserId:               userId,
-			Amount:               item.ItemPriceTotal,
-			Description:          item.ItemName,
-			CategoryId:           categoryId,
-			Type:                 "expense",
-			Source:               "receipt",
-			TransactionDate:      dateNow,
-			IsAutoCategorized:    true,
-			AiCategoryConfidence: item.AiCategoryConfidence,
-			CreatedAt:            dateNow,
-			UpdatedAt:            dateNow,
-			Confirmed:            false,
-			Discount:             item.ItemDiscount,
-		}
-
-		err := s.transactionService.InsertTransaction(newTransaction)
-		if err != nil {
-			s.logging.LogError(fmt.Sprintf("Failed to insert transaction: %v", err))
-			return fmt.Errorf("failed to insert transaction: %w", err)
-		}
-
 		// Create receipt item
 		receiptItem := &models.ReceiptItem{
-			ReceiptItemId:  ulid.Make().String(),
-			ReceiptId:      receiptId,
-			ItemName:       item.ItemName,
-			ItemQuantity:   item.ItemQuantity,
-			ItemPrice:      item.ItemPrice,
-			ItemPriceTotal: item.ItemPriceTotal,
-			ItemDiscount:   item.ItemDiscount,
-			CreatedAt:      dateNow,
-			UpdatedAt:      dateNow,
+			ReceiptItemId:        ulid.Make().String(),
+			ReceiptId:            receiptId,
+			ItemName:             item.ItemName,
+			ItemQuantity:         item.ItemQuantity,
+			ItemPrice:            item.ItemPrice,
+			ItemPriceTotal:       item.ItemPriceTotal,
+			ItemDiscount:         item.ItemDiscount,
+			CreatedAt:            dateNow,
+			UpdatedAt:            dateNow,
+			CategoryId:           item.CategoryId,
+			AiCategoryConfidence: item.AiCategoryConfidence,
 		}
 
-		err = s.receiptRepository.InsertReceiptItem(receiptItem)
+		err := s.receiptRepository.InsertReceiptItem(receiptItem)
 		if err != nil {
 			s.logging.LogError(fmt.Sprintf("Failed to insert receipt item: %v", err))
 			return fmt.Errorf("failed to insert receipt item: %w", err)
@@ -543,7 +516,7 @@ func (s *receiptService) GetDetailReceiptUserById(userId string, receiptId strin
 	return detailResponse, nil
 }
 
-func (s *receiptService) UpdateReceiptConfirmed(receiptId string, confirmed bool) error {
+func (s *receiptService) UpdateReceiptConfirmed(userId, receiptId string, confirmed bool) error {
 	s.logging.LogInfo(fmt.Sprintf("Updating receipt confirmation status for receipt ID %s to %t", receiptId, confirmed))
 
 	err := s.receiptRepository.UpdateReceiptConfirmed(receiptId, confirmed)
@@ -552,6 +525,78 @@ func (s *receiptService) UpdateReceiptConfirmed(receiptId string, confirmed bool
 		return fmt.Errorf("failed to update receipt confirmation status: %w", err)
 	}
 
+	// insert transaction if confirmed
+	if confirmed {
+		receipt, err := s.GetDetailReceiptUserById(userId, receiptId)
+		if err != nil {
+			s.logging.LogError(fmt.Sprintf("Failed to fetch receipt for ID %s: %v", receiptId, err))
+			return fmt.Errorf("failed to fetch receipt: %w", err)
+		}
+
+		for _, item := range receipt.Items {
+			// Handle empty category ID
+			if item.CategoryId != nil && *item.CategoryId == "" {
+				s.logging.LogInfo("Category ID is empty, setting it to nil")
+				item.CategoryId = nil
+			}
+
+			// Create transaction
+			categoryId := ""
+			if item.CategoryId != nil {
+				categoryId = *item.CategoryId
+			}
+
+			dateNow := time.Now()
+			newTransaction := &requests.TransactionRequest{
+				UserId:               userId,
+				Amount:               item.ItemPriceTotal,
+				Description:          item.ItemName,
+				CategoryId:           categoryId,
+				Type:                 "expense",
+				Source:               "receipt",
+				TransactionDate:      receipt.TransactionDate,
+				IsAutoCategorized:    true,
+				AiCategoryConfidence: item.AiCategoryConfidence,
+				CreatedAt:            dateNow,
+				UpdatedAt:            dateNow,
+				Confirmed:            false,
+				Discount:             item.ItemDiscount,
+			}
+
+			err := s.transactionService.InsertTransaction(newTransaction)
+			if err != nil {
+				s.logging.LogError(fmt.Sprintf("Failed to insert transaction: %v", err))
+				return fmt.Errorf("failed to insert transaction: %w", err)
+			}
+		}
+	}
+
 	s.logging.LogInfo(fmt.Sprintf("Receipt confirmation status for receipt ID %s updated successfully", receiptId))
 	return nil
+}
+
+// cleanAIResponse removes markdown formatting and extracts JSON content from AI response
+func (s *receiptService) cleanAIResponse(response string) string {
+	// Remove common markdown code block patterns
+	response = strings.ReplaceAll(response, "```json", "")
+	response = strings.ReplaceAll(response, "```", "")
+
+	// Trim whitespace
+	response = strings.TrimSpace(response)
+
+	// Find the first '{' and last '}' to extract JSON object
+	startIndex := strings.Index(response, "{")
+	if startIndex == -1 {
+		return response // No JSON object found, return as is
+	}
+
+	lastIndex := strings.LastIndex(response, "}")
+	if lastIndex == -1 || lastIndex <= startIndex {
+		return response // Invalid JSON structure, return as is
+	}
+
+	// Extract the JSON content
+	jsonContent := response[startIndex : lastIndex+1]
+
+	return jsonContent
 }

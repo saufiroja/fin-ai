@@ -12,6 +12,6 @@ type ReceiptManager interface {
 	UploadReceipt(filePath *multipart.FileHeader, userId string) (*models.Receipt, error)
 	GetReceiptsByUserId(userId string) ([]*models.Receipt, error)
 	GetDetailReceiptUserById(userId string, receiptId string) (*responses.DetailReceiptUserResponse, error)
-	UpdateReceiptConfirmed(receiptId string, confirmed bool) error
+	UpdateReceiptConfirmed(userId, receiptId string, confirmed bool) error
 	GetAllReceiptsByUserId(userId string, req *requests.GetAllReceiptsQuery) (*responses.ReceiptResponse, error)
 }
