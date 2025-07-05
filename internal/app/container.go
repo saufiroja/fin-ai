@@ -144,5 +144,5 @@ func (c *Container) initializeControllers() *Controllers {
 }
 
 func (c *Container) GetServerAddress() string {
-	return fmt.Sprintf("localhost:%s", c.Dependencies.Config.Http.Port)
+	return fmt.Sprintf("0.0.0.0:%s", c.Dependencies.Config.Http.Port)
 }

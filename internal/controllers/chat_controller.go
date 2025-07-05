@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains/chat"
@@ -55,6 +53,8 @@ func (c *chatController) FindAllChatSessions(ctx *fiber.Ctx) error {
 }
 
 func (c *chatController) RenameChatSession(ctx *fiber.Ctx) error {
+	chatSessionId := ctx.Params("chat_session_id")
+	userId := ctx.Locals("user_id").(string)
 	chatSession := new(models.ChatSessionUpdateRequest)
 	if err := ctx.BodyParser(chatSession); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{
@@ -70,7 +70,7 @@ func (c *chatController) RenameChatSession(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err := c.chatService.RenameChatSession(chatSession)
+	err := c.chatService.RenameChatSession(userId, chatSessionId, chatSession)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(responses.Response{
 			Status:  fiber.StatusInternalServerError,
@@ -102,8 +102,9 @@ func (c *chatController) DeleteChatSession(ctx *fiber.Ctx) error {
 }
 
 func (c *chatController) SendChatMessage(ctx *fiber.Ctx) error {
+	userId := ctx.Locals("user_id").(string)
 	message := new(models.ChatMessageRequest)
-	message.UserId = ctx.Locals("user_id").(string)
+	message.UserId = userId
 
 	if err := ctx.BodyParser(message); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{
@@ -111,7 +112,6 @@ func (c *chatController) SendChatMessage(ctx *fiber.Ctx) error {
 			Message: "Invalid request body",
 		})
 	}
-	fmt.Println("Received message:", message)
 
 	if err := c.validator.ValidateStruct(message); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(responses.Response{

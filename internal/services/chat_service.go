@@ -74,6 +74,7 @@ func (s *chatService) CreateChatSession(userId string) (*models.ChatSession, err
 	chatSession := &models.ChatSession{
 		ChatSessionId: ulid.Make().String(),
 		UserId:        userId,
+		Title:         "New Chat",
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -104,18 +105,18 @@ func (s *chatService) FindAllChatSessions(userId string) ([]*models.ChatSession,
 	return chatSessions, nil
 }
 
-func (s *chatService) RenameChatSession(req *models.ChatSessionUpdateRequest) error {
-	s.logging.LogInfo(fmt.Sprintf("Renaming chat session: %s", req.ChatSessionId))
+func (s *chatService) RenameChatSession(userId, chatSessionId string, req *models.ChatSessionUpdateRequest) error {
+	s.logging.LogInfo(fmt.Sprintf("Renaming chat session: %s", chatSessionId))
 
-	_, err := s.chatRepository.FindChatSessionByChatSessionIdAndUserId(req.ChatSessionId, req.UserId)
+	_, err := s.chatRepository.FindChatSessionByChatSessionIdAndUserId(chatSessionId, userId)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Chat session not found: %s", err.Error()))
 		return errors.New("chat session not found")
 	}
 
 	chatSession := &models.ChatSession{
-		ChatSessionId: req.ChatSessionId,
-		UserId:        req.UserId,
+		ChatSessionId: chatSessionId,
+		UserId:        userId,
 		Title:         req.Title,
 		UpdatedAt:     time.Now(),
 	}
@@ -201,7 +202,7 @@ func (s *chatService) getSystemPromptByMode(mode models.Mode) string {
 	}
 }
 
-func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessageRequest) (*models.ChatMessage, error) {
+func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessageRequest) (*responses.ChatMessageResponse, error) {
 	// Set default mode if empty
 	if req.Mode == "" {
 		req.Mode = models.ModeChat
@@ -214,8 +215,31 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 	}
 
 	s.logging.LogInfo(fmt.Sprintf("Processing chat message in %s mode for session: %s", req.Mode, req.ChatSessionId))
+	input := openai.EmbeddingNewParamsInputUnion{
+		OfString: param.NewOpt(req.Message),
+	}
+	embedding := s.openaiClient.CreateEmbedding(ctx, input)
+	if embedding == nil {
+		s.logging.LogError("Failed to create embedding: returned nil")
+		return nil, fmt.Errorf("failed to create embedding")
+	}
 
-	var responseAi *models.ChatMessage
+	err := s.chatRepository.InsertChatMessage(&models.ChatMessage{
+		ChatMessageId:    ulid.Make().String(),
+		ChatSessionId:    req.ChatSessionId,
+		Message:          req.Message,
+		MessageEmbedding: embedding.Embeddings,
+		Sender:           models.ChatMessageSenderUser,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+		DeletedAt:        time.Time{},
+	})
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to insert chat message: %s", err.Error()))
+		return nil, fmt.Errorf("failed to insert chat message: %w", err)
+	}
+
+	var responseAi *responses.ChatMessageResponse
 
 	// Handle different modes
 	switch req.Mode {
@@ -232,13 +256,45 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 			return nil, fmt.Errorf("failed to log AI response: %w", err)
 		}
 
-		responseAi = &models.ChatMessage{
+		input := openai.EmbeddingNewParamsInputUnion{
+			OfString: param.NewOpt(req.Message),
+		}
+		embedding := s.openaiClient.CreateEmbedding(ctx, input)
+		if embedding == nil {
+			s.logging.LogError("Failed to create embedding: returned nil")
+			return nil, fmt.Errorf("failed to create embedding")
+		}
+
+		err = s.chatRepository.InsertChatMessage(&models.ChatMessage{
+			ChatMessageId:    ulid.Make().String(),
+			ChatSessionId:    req.ChatSessionId,
+			Message:          response.Response.(string),
+			MessageEmbedding: embedding.Embeddings,
+			Sender:           models.ChatMessageSenderAssistant,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+			DeletedAt:        time.Time{},
+		})
+		if err != nil {
+			s.logging.LogError(fmt.Sprintf("Failed to insert AI chat message: %s", err.Error()))
+			return nil, fmt.Errorf("failed to insert AI chat message: %w", err)
+		}
+
+		responseAi = &responses.ChatMessageResponse{
 			ChatSessionId: req.ChatSessionId,
 			ChatMessageId: ulid.Make().String(),
-			Message:       response.Response.(string),
-			Sender:        models.ChatMessageSenderAssistant,
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			Conversation: []*responses.Conversation{
+				{
+					Sender: models.ChatMessageSenderUser,
+					Text:   req.Message,
+				},
+				{
+					Sender: models.ChatMessageSenderAssistant,
+					Text:   response.Response.(string),
+				},
+			},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 
 	case models.ModeChat:
@@ -272,13 +328,45 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 			return nil, fmt.Errorf("failed to run Gemini client: %w", err)
 		}
 
-		responseAi = &models.ChatMessage{
+		input := openai.EmbeddingNewParamsInputUnion{
+			OfString: param.NewOpt(req.Message),
+		}
+		embedding := s.openaiClient.CreateEmbedding(ctx, input)
+		if embedding == nil {
+			s.logging.LogError("Failed to create embedding: returned nil")
+			return nil, fmt.Errorf("failed to create embedding")
+		}
+
+		err = s.chatRepository.InsertChatMessage(&models.ChatMessage{
+			ChatMessageId:    ulid.Make().String(),
+			ChatSessionId:    req.ChatSessionId,
+			Message:          response.Response.(string),
+			MessageEmbedding: embedding.Embeddings,
+			Sender:           models.ChatMessageSenderAssistant,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+			DeletedAt:        time.Time{},
+		})
+		if err != nil {
+			s.logging.LogError(fmt.Sprintf("Failed to insert AI chat message: %s", err.Error()))
+			return nil, fmt.Errorf("failed to insert AI chat message: %w", err)
+		}
+
+		responseAi = &responses.ChatMessageResponse{
 			ChatSessionId: req.ChatSessionId,
 			ChatMessageId: ulid.Make().String(),
-			Message:       response.Response.(string),
-			Sender:        models.ChatMessageSenderAssistant,
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			Conversation: []*responses.Conversation{
+				{
+					Sender: models.ChatMessageSenderUser,
+					Text:   req.Message,
+				},
+				{
+					Sender: models.ChatMessageSenderAssistant,
+					Text:   response.Response.(string),
+				},
+			},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 	}
 

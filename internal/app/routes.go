@@ -61,7 +61,7 @@ func (r *Routes) setupChatRoutes() {
 
 	chatGroup.Post("/sessions", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.CreateChatSession)
 	chatGroup.Get("/sessions", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.FindAllChatSessions)
-	chatGroup.Put("/sessions/rename", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.RenameChatSession)
+	chatGroup.Put("/sessions/rename/:chat_session_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.RenameChatSession)
 	chatGroup.Delete("/sessions/:chat_session_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.DeleteChatSession)
 	chatGroup.Post("/sessions/send", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.SendChatMessage)
 	chatGroup.Get("/sessions/:chat_session_id", r.container.Dependencies.AuthMiddleware, r.container.Controllers.Chat.GetChatSessionDetail)
