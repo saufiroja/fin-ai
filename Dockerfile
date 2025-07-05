@@ -1,6 +1,6 @@
-FROM golang:1.24.1-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
-RUN apk add alpine-sdk 
+RUN apk add --no-cache alpine-sdk git
 
 WORKDIR /app
 
@@ -9,15 +9,17 @@ RUN go mod download
 
 COPY . .
 
-RUN GOOS=linux GOARCH=amd64 go build -tags musl -o fin-ai ./cmd
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o fin-ai ./cmd
 
-# Path: Dockerfile
-FROM alpine:3.14
+# Final stage
+FROM alpine:3.18
 
-RUN apk update && apk add --no-cache ca-certificates
+RUN apk update && apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
 COPY --from=builder /app/fin-ai .
+
+EXPOSE 8080
 
 CMD ["./fin-ai"]
