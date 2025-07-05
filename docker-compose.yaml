@@ -1,36 +1,36 @@
 version: '3.7'
 
 services:
-  # fin-ai:
-  #   image: fin-ai:0.0.1
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - '8080:8080'
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - fin-ai
-  #   environment:
-  #     - DB_HOST=postgres
-  #     - DB_PORT=5432
-  #     - DB_USER=postgres
-  #     - DB_PASS=postgres
-  #     - DB_NAME=postgres
-  #     - DB_SSL_MODE=disable
-  #     # Add other environment variables your app needs
-  #     - GO_ENV=development
-  #     - JWT_SECRET=secret
-  #     - OPENAI_API_KEY=your_openai_api_key # Change this
-  #     - GEMINI_API_KEY=your_gemini_api_key # Change this
-  #     - MINIO_ENDPOINT=minio:9000
-  #     - MINIO_ACCESS_KEY=minioadmin
-  #     - MINIO_SECRET_KEY=minioadmin
-  #     - MINIO_REGION=us-east-1
-  #     - MINIO_USE_SSL=false
-  #     - REDIS_HOST=redis
-  #     - REDIS_PORT=6379
+  fin-ai:
+    image: fin-ai:0.0.4
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres
+    networks:
+      - fin-ai
+    environment:
+      - GO_ENV=development
+      - HTTP_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_NAME=finaidb
+      - DB_SSL_MODE=disable
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=secret
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_REGION=us-east-1
+      - MINIO_USE_SSL=false
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
 
   postgres:
     image: ankane/pgvector
