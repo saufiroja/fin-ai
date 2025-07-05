@@ -43,15 +43,15 @@ jobs:
             # Membangun ulang image Docker sesuai docker-compose.yaml
             # Ini hanya akan membangun ulang service yang kodenya berubah.
             echo "Building Docker images..."
-            docker-compose build
+            sudo docker-compose build
             
             # Menjalankan ulang service dalam mode detached (background)
             # --remove-orphans akan menghapus kontainer lama jika ada.
             echo "Restarting services..."
-            docker-compose up -d --remove-orphans
+            sudo docker-compose up -d --remove-orphans
             
             # Membersihkan image Docker yang tidak terpakai (dangling)
             echo "Pruning unused Docker images..."
-            docker image prune -f
-            
+            sudo docker image prune -f
+
             echo "Deployment successful!"
