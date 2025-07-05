@@ -1,0 +1,57 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - revive
+    - goconst
+    - gocyclo
+    - gosec
+    - prealloc
+    - unconvert
+    - unparam
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  
+  gosec:
+    excludes:
+      - G101 # Look for hard coded credentials
+      - G404 # Insecure random number source (rand)
+  
+  revive:
+    rules:
+      - name: exported
+        disabled: true
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - gosec
+        - unparam
+    
+    # Ignore shadowing of err
+    - linters: [govet]
+      text: 'shadow: declaration of "err"'
+    
+    # Ignore missing comments for exported functions in main packages
+    - path: cmd/
+      linters: [revive]
+      text: "exported: exported function"
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
