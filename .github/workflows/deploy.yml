@@ -20,9 +20,6 @@ jobs:
       # Menggunakan action populer untuk menjalankan perintah melalui SSH.
       - name: SSH and Deploy
         uses: appleboy/ssh-action@master
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -31,17 +28,19 @@ jobs:
             # Pindah ke direktori proyek di VM
             cd ${{ secrets.PROJECT_PATH }}
             
-            # Ekspor secrets sebagai environment variables
-            # Variabel ini hanya akan ada selama sesi SSH ini berlangsung
-            export OPENAI_API_KEY=$OPENAI_API_KEY
-            export GEMINI_API_KEY=$GEMINI_API_KEY
+            # Membuat file .env yang akan dibaca otomatis oleh Docker Compose
+            # Ini adalah cara standar dan paling andal untuk mengelola secrets.
+            echo "Creating .env file..."
+            cat <<EOF > .env
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            EOF
 
             # Ambil perubahan terbaru dari branch main
             echo "Pulling latest changes..."
             git pull origin main
             
             # Menjalankan perintah Docker dengan 'sudo' dan menggunakan 'docker compose' (V2)
-            # Ini lebih modern dan mengatasi masalah PATH.
             echo "Building Docker images..."
             sudo docker compose build
             
@@ -52,5 +51,5 @@ jobs:
             # Membersihkan image Docker yang tidak terpakai (dangling)
             echo "Pruning unused Docker images..."
             sudo docker image prune -f
-
+            
             echo "Deployment successful!"
