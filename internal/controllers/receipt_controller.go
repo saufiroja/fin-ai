@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/saufiroja/fin-ai/internal/contracts/requests"
 	"github.com/saufiroja/fin-ai/internal/contracts/responses"
 	"github.com/saufiroja/fin-ai/internal/domains/receipt"
 )
@@ -27,7 +28,7 @@ func (r *receiptController) UploadReceipt(c *fiber.Ctx) error {
 
 	userId := c.Locals("user_id").(string)
 
-	err = r.receiptService.UploadReceipt(file, userId)
+	receipt, err := r.receiptService.UploadReceipt(file, userId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(responses.Response{
 			Status:  fiber.StatusInternalServerError,
@@ -38,13 +39,27 @@ func (r *receiptController) UploadReceipt(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(responses.Response{
 		Status:  fiber.StatusOK,
 		Message: "Receipt uploaded successfully",
+		Data:    receipt,
 	})
 }
 
 func (r *receiptController) GetReceiptsByUserId(c *fiber.Ctx) error {
 	userId := c.Locals("user_id").(string)
+	query := &requests.GetAllReceiptsQuery{
+		Limit:     10, // Default limit
+		Offset:    1,  // Default offset
+		Search:    "",
+		SortBy:    "created_at", // Default sort by
+		SortOrder: "DESC",       // Default sort order
+	}
+	if err := c.QueryParser(query); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(responses.Response{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid query parameters",
+		})
+	}
 
-	receipts, err := r.receiptService.GetReceiptsByUserId(userId)
+	receipts, err := r.receiptService.GetAllReceiptsByUserId(userId, query)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(responses.Response{
 			Status:  fiber.StatusInternalServerError,
@@ -55,7 +70,12 @@ func (r *receiptController) GetReceiptsByUserId(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(responses.Response{
 		Status:  fiber.StatusOK,
 		Message: "Receipts retrieved successfully",
-		Data:    receipts,
+		Data:    receipts.Receipts,
+		Pagination: &responses.Pagination{
+			Total:       receipts.Total,
+			TotalPages:  receipts.TotalPages,
+			CurrentPage: receipts.CurrentPage,
+		},
 	})
 }
 

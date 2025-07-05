@@ -1,6 +1,9 @@
 package repositories
 
 import (
+	"fmt"
+
+	"github.com/saufiroja/fin-ai/internal/contracts/requests"
 	"github.com/saufiroja/fin-ai/internal/domains/receipt"
 	"github.com/saufiroja/fin-ai/internal/models"
 	"github.com/saufiroja/fin-ai/pkg/databases"
@@ -108,6 +111,72 @@ func (r *receiptRepository) GetReceiptsByUserId(userId string) ([]*models.Receip
 	return receipts, nil
 }
 
+func (r *receiptRepository) GetAllReceiptsByUserId(userId string, req *requests.GetAllReceiptsQuery) ([]*models.Receipt, error) {
+	db := r.DB.Connection()
+	fmt.Println("GetAllReceiptsByUserId called with userId:", userId, "and request:", req)
+
+	// Build the ORDER BY clause safely
+	orderBy := "created_at DESC" // default
+	if req.SortBy != "" && req.SortOrder != "" {
+		// Validate sortBy to prevent SQL injection
+		validSortColumns := map[string]bool{
+			"created_at":       true,
+			"updated_at":       true,
+			"transaction_date": true,
+			"merchant_name":    true,
+			"total_shopping":   true,
+			"sub_total":        true,
+		}
+
+		validSortOrders := map[string]bool{
+			"ASC":  true,
+			"DESC": true,
+		}
+
+		if validSortColumns[req.SortBy] && validSortOrders[req.SortOrder] {
+			orderBy = req.SortBy + " " + req.SortOrder
+		}
+	}
+
+	query := fmt.Sprintf(`
+    SELECT 
+        receipt_id, 
+        user_id, 
+        merchant_name, 
+        sub_total, 
+        total_discount, 
+        total_shopping, 
+        metadata, 
+        extracted_receipt, 
+        extracted_receipt_embedding, 
+        confirmed, 
+        transaction_date, 
+        created_at, 
+        updated_at
+    FROM receipts
+    WHERE user_id = $1
+	AND (merchant_name ILIKE '%%' || $2 || '%%' OR $2 = '')
+	ORDER BY %s
+	LIMIT $3 OFFSET $4`, orderBy)
+
+	rows, err := db.Query(query, userId, req.Search, req.Limit, req.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var receipts []*models.Receipt
+	for rows.Next() {
+		var receipt models.Receipt
+		if err := rows.Scan(&receipt.ReceiptId, &receipt.UserId, &receipt.MerchantName, &receipt.SubTotal, &receipt.TotalDiscount, &receipt.TotalShopping, &receipt.MetaData, &receipt.ExtractedReceipt, &receipt.ExtractedReceiptEmbedding, &receipt.Confirmed, &receipt.TransactionDate, &receipt.CreatedAt, &receipt.UpdatedAt); err != nil {
+			return nil, err
+		}
+		receipts = append(receipts, &receipt)
+	}
+
+	return receipts, nil
+}
+
 func (r *receiptRepository) GetDetailReceiptUserById(userId string, receiptId string) (*models.Receipt, error) {
 	db := r.DB.Connection()
 
@@ -195,4 +264,22 @@ func (r *receiptRepository) UpdateReceiptConfirmed(receiptId string, confirmed b
 	}
 
 	return nil
+}
+
+func (r *receiptRepository) CountReceiptsByUserId(userId string, req *requests.GetAllReceiptsQuery) (int64, error) {
+	db := r.DB.Connection()
+
+	query := `
+	SELECT COUNT(*)
+	FROM receipts
+	WHERE user_id = $1
+	AND (merchant_name ILIKE '%' || $2 || '%' OR $2 = '')`
+
+	var count int64
+	err := db.QueryRow(query, userId, req.Search).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

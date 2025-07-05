@@ -40,4 +40,12 @@ type DetailReceiptUserResponse struct {
 	CreatedAt       time.Time             `json:"created_at"`
 	UpdatedAt       time.Time             `json:"updated_at"`
 	Items           []*models.ReceiptItem `json:"items"`
+	Confirmed       bool                  `json:"confirmed"`
+}
+
+type ReceiptResponse struct {
+	TotalPages  int64             `json:"total_pages"`
+	CurrentPage int64             `json:"current_page"`
+	Total       int64             `json:"total"`
+	Receipts    []*models.Receipt `json:"receipts"`
 }

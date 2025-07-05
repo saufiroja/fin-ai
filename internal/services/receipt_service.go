@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
+	"math"
 	"mime/multipart"
 	"strings"
 	"time"
@@ -65,42 +66,43 @@ func NewReceiptService(
 	}
 }
 
-func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId string) error {
+func (s *receiptService) UploadReceipt(filePath *multipart.FileHeader, userId string) (*models.Receipt, error) {
 	s.logging.LogInfo(fmt.Sprintf("Uploading receipt for user %s from file %s", userId, filePath.Filename))
 
 	if err := s.validateFileSize(filePath); err != nil {
-		return err
+		return nil, err
 	}
 
 	optimizedImageBytes, err := s.processImage(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to process image: %w", err)
+		return nil, fmt.Errorf("failed to process image: %w", err)
 	}
 
 	categoriesOfString, err := s.getCategoriesString()
 	if err != nil {
-		return fmt.Errorf("failed to get categories: %w", err)
+		return nil, fmt.Errorf("failed to get categories: %w", err)
 	}
 
 	if err := s.uploadToMinIO(filePath, userId); err != nil {
-		return fmt.Errorf("failed to upload to MinIO: %w", err)
+		return nil, fmt.Errorf("failed to upload to MinIO: %w", err)
 	}
 
 	extractedData, responseString, responseAi, err := s.processReceiptWithGemini(optimizedImageBytes, categoriesOfString, filePath.Filename)
 	if err != nil {
-		return fmt.Errorf("failed to process receipt with AI: %w", err)
+		return nil, fmt.Errorf("failed to process receipt with AI: %w", err)
 	}
 
 	if err := s.logAIResponse(responseString, responseAi, userId); err != nil {
-		return fmt.Errorf("failed to log AI response: %w", err)
+		return nil, fmt.Errorf("failed to log AI response: %w", err)
 	}
 
-	if err := s.saveReceipt(extractedData, filePath, userId); err != nil {
-		return fmt.Errorf("failed to save receipt to database: %w", err)
+	receipt, err := s.saveReceipt(extractedData, filePath, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save receipt to database: %w", err)
 	}
 
 	s.logging.LogInfo(fmt.Sprintf("Receipt for user %s uploaded and processed successfully", userId))
-	return nil
+	return receipt, nil
 }
 
 func (s *receiptService) validateFileSize(filePath *multipart.FileHeader) error {
@@ -299,13 +301,13 @@ func (s *receiptService) logAIResponse(responseString string, responseAi *respon
 	return nil
 }
 
-func (s *receiptService) saveReceipt(extractedData *responses.ReceiptExtractionResponse, filePath *multipart.FileHeader, userId string) error {
+func (s *receiptService) saveReceipt(extractedData *responses.ReceiptExtractionResponse, filePath *multipart.FileHeader, userId string) (*models.Receipt, error) {
 	dateNow := time.Now()
 
 	extractedReceiptJSON, err := json.Marshal(extractedData.ExtractedReceipt)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to marshal extracted receipt: %v", err))
-		return fmt.Errorf("failed to marshal extracted receipt: %w", err)
+		return nil, fmt.Errorf("failed to marshal extracted receipt: %w", err)
 	}
 
 	input := openai.EmbeddingNewParamsInputUnion{
@@ -322,7 +324,7 @@ func (s *receiptService) saveReceipt(extractedData *responses.ReceiptExtractionR
 	metaDataJSON, err := json.Marshal(metaData)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to marshal metadata: %v", err))
-		return fmt.Errorf("failed to marshal metadata: %w", err)
+		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
 	// Create receipt model
@@ -346,11 +348,17 @@ func (s *receiptService) saveReceipt(extractedData *responses.ReceiptExtractionR
 	err = s.insertReceipt(receiptModel)
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to insert receipt: %v", err))
-		return fmt.Errorf("failed to insert receipt: %w", err)
+		return nil, fmt.Errorf("failed to insert receipt: %w", err)
 	}
 
 	// Insert receipt items
-	return s.insertReceiptItems(extractedData.ExtractedReceipt.Items, receiptModel.ReceiptId, userId, dateNow)
+	err = s.insertReceiptItems(extractedData.ExtractedReceipt.Items, receiptModel.ReceiptId, userId, dateNow)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to insert receipt items: %v", err))
+		return nil, fmt.Errorf("failed to insert receipt items: %w", err)
+	}
+
+	return receiptModel, nil
 }
 
 func (s *receiptService) insertReceiptItems(items []responses.ReceiptItemResponse, receiptId, userId string, dateNow time.Time) error {
@@ -451,6 +459,57 @@ func (s *receiptService) GetReceiptsByUserId(userId string) ([]*models.Receipt, 
 	return receipts, nil
 }
 
+func (s *receiptService) GetAllReceiptsByUserId(userId string, req *requests.GetAllReceiptsQuery) (*responses.ReceiptResponse, error) {
+	s.logging.LogInfo(fmt.Sprintf("Fetching all receipts for user %s", userId))
+
+	switch {
+	case req.SortBy == "":
+		req.SortBy = "created_at"
+	case req.SortBy == "merchant_name":
+		req.SortBy = "merchant_name"
+	case req.SortBy == "total_shopping":
+		req.SortBy = "total_shopping"
+	}
+
+	offset := 0
+	if req.Offset > 1 {
+		offset = (req.Offset - 1) * req.Limit
+	}
+
+	queryReq := &requests.GetAllReceiptsQuery{
+		Offset:    offset,
+		Limit:     req.Limit,
+		Search:    req.Search,
+		SortBy:    req.SortBy,
+		SortOrder: req.SortOrder,
+	}
+
+	receipts, err := s.receiptRepository.GetAllReceiptsByUserId(userId, queryReq)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Failed to fetch receipts for user %s: %v", userId, err))
+		return nil, fmt.Errorf("failed to fetch receipts: %w", err)
+	}
+
+	count, err := s.receiptRepository.CountReceiptsByUserId(userId, queryReq)
+	if err != nil {
+		s.logging.LogError(fmt.Sprintf("Error counting receipts: %v", err))
+		return nil, err
+	}
+
+	totalPages := math.Ceil(float64(count) / float64(req.Limit))
+	currentPage := math.Min(float64(req.Offset), float64(totalPages))
+
+	res := &responses.ReceiptResponse{
+		TotalPages:  int64(totalPages),
+		CurrentPage: int64(currentPage),
+		Total:       int64(count),
+		Receipts:    receipts,
+	}
+
+	s.logging.LogInfo(fmt.Sprintf("Fetched %d receipts for user %s", len(receipts), userId))
+	return res, nil
+}
+
 func (s *receiptService) GetDetailReceiptUserById(userId string, receiptId string) (*responses.DetailReceiptUserResponse, error) {
 	s.logging.LogInfo(fmt.Sprintf("Fetching detail receipt for user %s and receipt ID %s", userId, receiptId))
 
@@ -477,6 +536,7 @@ func (s *receiptService) GetDetailReceiptUserById(userId string, receiptId strin
 		CreatedAt:       receipt.CreatedAt,
 		UpdatedAt:       receipt.UpdatedAt,
 		Items:           items,
+		Confirmed:       receipt.Confirmed,
 	}
 
 	s.logging.LogInfo(fmt.Sprintf("Fetched detail receipt for user %s and receipt ID %s successfully", userId, receiptId))
