@@ -40,15 +40,14 @@ jobs:
             echo "Pulling latest changes..."
             git pull origin main
             
-            # Membangun ulang image Docker sesuai docker-compose.yaml
-            # Ini hanya akan membangun ulang service yang kodenya berubah.
+            # Menjalankan perintah Docker dengan 'sudo' dan menggunakan 'docker compose' (V2)
+            # Ini lebih modern dan mengatasi masalah PATH.
             echo "Building Docker images..."
-            sudo docker-compose build
+            sudo docker compose build
             
             # Menjalankan ulang service dalam mode detached (background)
-            # --remove-orphans akan menghapus kontainer lama jika ada.
             echo "Restarting services..."
-            sudo docker-compose up -d --remove-orphans
+            sudo docker compose up -d --remove-orphans
             
             # Membersihkan image Docker yang tidak terpakai (dangling)
             echo "Pruning unused Docker images..."
