@@ -202,6 +202,38 @@ func (s *chatService) getSystemPromptByMode(mode models.Mode) string {
 	}
 }
 
+// getChatHistory retrieves the chat history for a session and converts it to Gemini content format
+func (s *chatService) getChatHistory(ctx context.Context, chatSessionId, userId string) ([]*genai.Content, error) {
+	s.logging.LogInfo(fmt.Sprintf("Retrieving chat history for session: %s", chatSessionId))
+
+	chatDetails, err := s.chatRepository.FindChatSessionDetailByChatSessionIdAndUserId(chatSessionId, userId)
+	if err != nil {
+		s.logging.LogWarn(fmt.Sprintf("Failed to get chat history: %s", err.Error()))
+		return []*genai.Content{}, nil // Return empty history if error, don't fail the whole request
+	}
+
+	var contents []*genai.Content
+
+	// Convert chat history to Gemini content format
+	for _, detail := range chatDetails {
+		var role genai.Role
+		if detail.Sender == models.ChatMessageSenderUser {
+			role = genai.RoleUser
+		} else {
+			role = genai.RoleModel
+		}
+
+		content := genai.NewContentFromParts([]*genai.Part{
+			genai.NewPartFromText(detail.Message),
+		}, role)
+
+		contents = append(contents, content)
+	}
+
+	s.logging.LogInfo(fmt.Sprintf("Retrieved %d messages from chat history", len(contents)))
+	return contents, nil
+}
+
 func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessageRequest) (*responses.ChatMessageResponse, error) {
 	// Set default mode if empty
 	if req.Mode == "" {
@@ -237,7 +269,32 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 	case models.ModeAgent:
 		// Use RunAgent for agent mode
 		s.logging.LogInfo("Using RunAgent for agent mode")
-		response, err := s.geminiClient.RunAgent(ctx, req.Message, req.UserId)
+
+		// Get chat history for context
+		chatDetails, err := s.chatRepository.FindChatSessionDetailByChatSessionIdAndUserId(req.ChatSessionId, req.UserId)
+		if err != nil {
+			s.logging.LogWarn(fmt.Sprintf("Failed to get chat history: %s", err.Error()))
+		}
+
+		// Build context message with chat history
+		var messageWithContext string
+		if len(chatDetails) > 0 {
+			s.logging.LogInfo(fmt.Sprintf("Including %d previous messages for context", len(chatDetails)))
+			contextStr := "\n\n--- CHAT HISTORY CONTEXT ---\n"
+			for _, detail := range chatDetails {
+				if detail.Sender == models.ChatMessageSenderUser {
+					contextStr += fmt.Sprintf("User: %s\n", detail.Message)
+				} else {
+					contextStr += fmt.Sprintf("Assistant: %s\n", detail.Message)
+				}
+			}
+			contextStr += "--- END CHAT HISTORY ---\n\n"
+			messageWithContext = contextStr + "Current message: " + req.Message
+		} else {
+			messageWithContext = req.Message
+		}
+
+		response, err := s.geminiClient.RunAgent(ctx, messageWithContext, req.UserId)
 		if err != nil {
 			s.logging.LogError(fmt.Sprintf("Failed to run Gemini agent: %s", err.Error()))
 			return nil, fmt.Errorf("failed to run Gemini agent: %w", err)
@@ -300,17 +357,27 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 			systemPrompt = s.getSystemPromptByMode(req.Mode) // Fallback to base prompt
 		}
 
-		partsAi := []*genai.Part{
-			genai.NewPartFromText(systemPrompt),
-		}
-		parts := []*genai.Part{
-			genai.NewPartFromText(req.Message),
+		// Get chat history
+		chatHistory, err := s.getChatHistory(ctx, req.ChatSessionId, req.UserId)
+		if err != nil {
+			s.logging.LogWarn(fmt.Sprintf("Failed to get chat history: %s", err.Error()))
+			chatHistory = []*genai.Content{} // Use empty history if error
 		}
 
+		// Build message with system prompt, chat history, and current message
 		message := []*genai.Content{
-			genai.NewContentFromParts(partsAi, genai.RoleModel),
-			genai.NewContentFromParts(parts, genai.RoleUser),
+			genai.NewContentFromParts([]*genai.Part{
+				genai.NewPartFromText(systemPrompt),
+			}, genai.RoleModel),
 		}
+
+		// Add chat history
+		message = append(message, chatHistory...)
+
+		// Add current user message
+		message = append(message, genai.NewContentFromParts([]*genai.Part{
+			genai.NewPartFromText(req.Message),
+		}, genai.RoleUser))
 
 		response, err := s.geminiClient.Run(ctx, "gemini-2.5-flash", message)
 		if err != nil {
@@ -412,7 +479,6 @@ func (s *chatService) calculateCosineSimilarity(embedding1, embedding2 []float64
 	return dotProduct / (math.Sqrt(norm1) * math.Sqrt(norm2))
 }
 
-// parseEmbedding parses embedding string to float64 slice
 func (s *chatService) parseEmbedding(embeddingStr string) ([]float64, error) {
 	// Remove brackets and split by comma
 	embeddingStr = strings.Trim(embeddingStr, "[]")
@@ -434,7 +500,6 @@ func (s *chatService) parseEmbedding(embeddingStr string) ([]float64, error) {
 	return embedding, nil
 }
 
-// createQueryEmbedding creates embedding for user query
 func (s *chatService) createQueryEmbedding(ctx context.Context, query string) ([]float64, error) {
 	input := openai.EmbeddingNewParamsInputUnion{
 		OfString: param.NewOpt(query),
@@ -449,7 +514,6 @@ func (s *chatService) createQueryEmbedding(ctx context.Context, query string) ([
 	return s.parseEmbedding(embedding.Embeddings)
 }
 
-// gatherRelevantFinancialData uses RAG to find most relevant financial data based on query
 func (s *chatService) gatherRelevantFinancialData(ctx context.Context, userId, query string) (*models.RelevantFinancialData, error) {
 	s.logging.LogInfo(fmt.Sprintf("Gathering relevant financial data for user: %s", userId))
 
@@ -585,7 +649,6 @@ func (s *chatService) gatherRelevantFinancialData(ctx context.Context, userId, q
 	return relevantData, nil
 }
 
-// gatherUserKnowledge retrieves user's financial data for Ask mode context
 func (s *chatService) gatherUserKnowledge(ctx context.Context, userId string) (*models.UserKnowledge, error) {
 	s.logging.LogInfo(fmt.Sprintf("Gathering user knowledge for user: %s", userId))
 
@@ -629,7 +692,6 @@ func (s *chatService) gatherUserKnowledge(ctx context.Context, userId string) (*
 	return knowledge, nil
 }
 
-// buildKnowledgeContext creates a formatted string of user's knowledge for AI context
 func (s *chatService) buildKnowledgeContext(knowledge *models.UserKnowledge) string {
 	if knowledge == nil {
 		return ""
@@ -675,7 +737,6 @@ func (s *chatService) buildKnowledgeContext(knowledge *models.UserKnowledge) str
 	return context
 }
 
-// buildRelevantKnowledgeContext creates a formatted string of relevant user's knowledge for AI context using RAG
 func (s *chatService) buildRelevantKnowledgeContext(relevantData *models.RelevantFinancialData) string {
 	if relevantData == nil {
 		return ""
@@ -725,7 +786,6 @@ func (s *chatService) buildRelevantKnowledgeContext(relevantData *models.Relevan
 	return context
 }
 
-// getSystemPromptWithKnowledge returns system prompt enhanced with relevant user knowledge using RAG for Ask mode
 func (s *chatService) getSystemPromptWithKnowledge(mode models.Mode, userId string, userQuery string, ctx context.Context) (string, error) {
 	basePrompt := s.getSystemPromptByMode(mode)
 
