@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   fin-ai:
-    image: fin-ai:0.0.7
+    image: fin-ai:0.0.8
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,6 +10,7 @@ services:
       - '8080:8080'
     depends_on:
       - postgres
+    restart: always
     networks:
       - fin-ai
     environment:
