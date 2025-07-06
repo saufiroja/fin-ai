@@ -3,14 +3,13 @@ package models
 import "time"
 
 type ChatMessage struct {
-	ChatMessageId    string            `json:"chat_message_id"`
-	ChatSessionId    string            `json:"chat_session_id"`
-	Message          string            `json:"content"`
-	MessageEmbedding any               `json:"-"`
-	Sender           ChatMessageSender `json:"sender"`
-	CreatedAt        time.Time         `json:"created_at"`
-	UpdatedAt        time.Time         `json:"updated_at"`
-	DeletedAt        time.Time         `json:"deleted_at"`
+	ChatMessageId string            `json:"chat_message_id"`
+	ChatSessionId string            `json:"chat_session_id"`
+	Message       string            `json:"content"`
+	Sender        ChatMessageSender `json:"sender"`
+	CreatedAt     time.Time         `json:"created_at"`
+	UpdatedAt     time.Time         `json:"updated_at"`
+	DeletedAt     time.Time         `json:"deleted_at"`
 }
 
 type ChatMessageSender string

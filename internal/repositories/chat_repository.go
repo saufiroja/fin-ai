@@ -87,10 +87,10 @@ func (r *chatRepository) FindChatSessionByChatSessionIdAndUserId(chatSessionId, 
 
 func (r *chatRepository) InsertChatMessage(chatMessage *models.ChatMessage) error {
 	db := r.DB.Connection()
-	query := `INSERT INTO chat_messages (chat_message_id, chat_session_id, message, sender, created_at, updated_at, message_embedding)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	query := `INSERT INTO chat_messages (chat_message_id, chat_session_id, message, sender, created_at, updated_at)
+	VALUES ($1, $2, $3, $4, $5, $6)`
 	_, err := db.Exec(query, chatMessage.ChatMessageId, chatMessage.ChatSessionId, chatMessage.Message,
-		chatMessage.Sender, chatMessage.CreatedAt, chatMessage.UpdatedAt, chatMessage.MessageEmbedding)
+		chatMessage.Sender, chatMessage.CreatedAt, chatMessage.UpdatedAt)
 	if err != nil {
 		return err
 	}

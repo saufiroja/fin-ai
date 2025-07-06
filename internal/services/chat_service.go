@@ -215,24 +215,15 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 	}
 
 	s.logging.LogInfo(fmt.Sprintf("Processing chat message in %s mode for session: %s", req.Mode, req.ChatSessionId))
-	input := openai.EmbeddingNewParamsInputUnion{
-		OfString: param.NewOpt(req.Message),
-	}
-	embedding := s.openaiClient.CreateEmbedding(ctx, input)
-	if embedding == nil {
-		s.logging.LogError("Failed to create embedding: returned nil")
-		return nil, fmt.Errorf("failed to create embedding")
-	}
 
 	err := s.chatRepository.InsertChatMessage(&models.ChatMessage{
-		ChatMessageId:    ulid.Make().String(),
-		ChatSessionId:    req.ChatSessionId,
-		Message:          req.Message,
-		MessageEmbedding: embedding.Embeddings,
-		Sender:           models.ChatMessageSenderUser,
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-		DeletedAt:        time.Time{},
+		ChatMessageId: ulid.Make().String(),
+		ChatSessionId: req.ChatSessionId,
+		Message:       req.Message,
+		Sender:        models.ChatMessageSenderUser,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+		DeletedAt:     time.Time{},
 	})
 	if err != nil {
 		s.logging.LogError(fmt.Sprintf("Failed to insert chat message: %s", err.Error()))
@@ -266,14 +257,13 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 		}
 
 		err = s.chatRepository.InsertChatMessage(&models.ChatMessage{
-			ChatMessageId:    ulid.Make().String(),
-			ChatSessionId:    req.ChatSessionId,
-			Message:          response.Response.(string),
-			MessageEmbedding: embedding.Embeddings,
-			Sender:           models.ChatMessageSenderAssistant,
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
-			DeletedAt:        time.Time{},
+			ChatMessageId: ulid.Make().String(),
+			ChatSessionId: req.ChatSessionId,
+			Message:       response.Response.(string),
+			Sender:        models.ChatMessageSenderAssistant,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+			DeletedAt:     time.Time{},
 		})
 		if err != nil {
 			s.logging.LogError(fmt.Sprintf("Failed to insert AI chat message: %s", err.Error()))
@@ -338,14 +328,13 @@ func (s *chatService) SendChatMessage(ctx context.Context, req *models.ChatMessa
 		}
 
 		err = s.chatRepository.InsertChatMessage(&models.ChatMessage{
-			ChatMessageId:    ulid.Make().String(),
-			ChatSessionId:    req.ChatSessionId,
-			Message:          response.Response.(string),
-			MessageEmbedding: embedding.Embeddings,
-			Sender:           models.ChatMessageSenderAssistant,
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
-			DeletedAt:        time.Time{},
+			ChatMessageId: ulid.Make().String(),
+			ChatSessionId: req.ChatSessionId,
+			Message:       response.Response.(string),
+			Sender:        models.ChatMessageSenderAssistant,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+			DeletedAt:     time.Time{},
 		})
 		if err != nil {
 			s.logging.LogError(fmt.Sprintf("Failed to insert AI chat message: %s", err.Error()))
