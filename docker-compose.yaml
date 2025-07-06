@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   fin-ai:
-    image: fin-ai:0.0.8
+    image: fin-ai:0.0.9
     build:
       context: .
       dockerfile: Dockerfile
