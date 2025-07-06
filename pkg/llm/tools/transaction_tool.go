@@ -48,11 +48,11 @@ func (tt *TransactionTool) Handle(toolCall llms.ToolCall, ctx *ToolContext) (llm
 		CategoryId:        categoryId,
 		Type:              typeCategory,
 		Description:       args.Description,
-		Amount:            int64(args.Amount), // Convert to cents
+		Amount:            int64(args.Amount), // Convert to Rupiah integer
 		Source:            args.Source,
 		IsAutoCategorized: args.CategoryId == "", // Auto-categorized if no category provided
 		Confirmed:         args.Confirmed,
-		Discount:          int64(args.Discount), // Convert to cents
+		Discount:          int64(args.Discount), // Convert to Rupiah integer
 	}
 
 	err = ctx.TransactionService.InsertTransaction(transactionReq)

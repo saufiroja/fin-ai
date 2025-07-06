@@ -656,10 +656,10 @@ func (s *chatService) buildKnowledgeContext(knowledge *models.UserKnowledge) str
 				context += fmt.Sprintf("... and %d more transactions\n", len(knowledge.Transactions)-10)
 				break
 			}
-			context += fmt.Sprintf("- %s: %s %.2f (%s) - %s\n",
+			context += fmt.Sprintf("- %s: %s Rp %.0f (%s) - %s\n",
 				tx.TransactionDate.Format("2006-01-02"),
 				tx.Type,
-				float64(tx.Amount)/100, // Convert from cents
+				float64(tx.Amount), // Amount in Rupiah (no conversion needed)
 				tx.Source,
 				tx.Description)
 		}
@@ -673,11 +673,11 @@ func (s *chatService) buildKnowledgeContext(knowledge *models.UserKnowledge) str
 				context += fmt.Sprintf("... and %d more receipts\n", len(knowledge.Receipts)-5)
 				break
 			}
-			context += fmt.Sprintf("- %s: %s - Total: %.2f (Discount: %.2f)\n",
+			context += fmt.Sprintf("- %s: %s - Total: Rp %.0f (Discount: Rp %.0f)\n",
 				receipt.TransactionDate.Format("2006-01-02"),
 				receipt.MerchantName,
-				float64(receipt.TotalShopping)/100, // Convert from cents
-				float64(receipt.TotalDiscount)/100)
+				float64(receipt.TotalShopping), // Amount in Rupiah (no conversion needed)
+				float64(receipt.TotalDiscount))
 		}
 	}
 
@@ -703,10 +703,10 @@ func (s *chatService) buildRelevantKnowledgeContext(relevantData *models.Relevan
 				break
 			}
 			tx := txWithScore.Transaction
-			context += fmt.Sprintf("- %s: %s %.2f (%s) - %s (Relevance: %.2f)\n",
+			context += fmt.Sprintf("- %s: %s Rp %.0f (%s) - %s (Relevance: %.2f)\n",
 				tx.TransactionDate.Format("2006-01-02"),
 				tx.Type,
-				float64(tx.Amount)/100, // Convert from cents
+				float64(tx.Amount), // Amount in Rupiah (no conversion needed)
 				tx.Source,
 				tx.Description,
 				txWithScore.Score)
@@ -722,11 +722,11 @@ func (s *chatService) buildRelevantKnowledgeContext(relevantData *models.Relevan
 				break
 			}
 			receipt := receiptWithScore.Receipt
-			context += fmt.Sprintf("- %s: %s - Total: %.2f (Discount: %.2f) (Relevance: %.2f)\n",
+			context += fmt.Sprintf("- %s: %s - Total: Rp %.0f (Discount: Rp %.0f) (Relevance: %.2f)\n",
 				receipt.TransactionDate.Format("2006-01-02"),
 				receipt.MerchantName,
-				float64(receipt.TotalShopping)/100, // Convert from cents
-				float64(receipt.TotalDiscount)/100,
+				float64(receipt.TotalShopping), // Amount in Rupiah (no conversion needed)
+				float64(receipt.TotalDiscount),
 				receiptWithScore.Score)
 		}
 	}
